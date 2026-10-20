@@ -1,0 +1,129 @@
+# Keeps the estimates in each user-story issue in sync with the wiki Product Backlog.
+# Runs when the Product-Backlog wiki page is saved, or manually from the Actions tab
+# (tick "dry run" to only preview the changes).
+name: Sync backlog estimates to issues
+
+on:
+  gollum:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Only show what would change"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency: sync-estimates
+
+jobs:
+  sync:
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.pages.*.page_name, 'Product-Backlog')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get the wiki
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository }}.wiki
+          path: wiki
+
+      - name: Update issues from the backlog table
+        env:
+          REPO: ${{ github.repository }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BACKLOG: wiki/Product-Backlog.md
+          DRY_RUN: ${{ inputs.dry_run && '1' || '0' }}
+        run: |
+          python3 - <<'PY'
+          """Copy story points / risk / half-way from the wiki Product Backlog into the matching issues.
+
+          Env: REPO (owner/name), GH_TOKEN (needed unless DRY_RUN=1), BACKLOG (path to Product-Backlog.md),
+               DRY_RUN=1 to only print what would change.
+          """
+          import json, os, re, sys, urllib.request
+
+          REPO = os.environ["REPO"]
+          TOKEN = os.environ.get("GH_TOKEN", "")
+          DRY = os.environ.get("DRY_RUN") == "1"
+          BACKLOG = os.environ.get("BACKLOG", "wiki/Product-Backlog.md")
+          ID_RE = re.compile(r"US \d{2}\.\d{2}\.\d{2}")
+
+
+          def api(method, path, data=None):
+              req = urllib.request.Request(f"https://api.github.com{path}", method=method,
+                                           data=json.dumps(data).encode() if data is not None else None)
+              req.add_header("Accept", "application/vnd.github+json")
+              if TOKEN:
+                  req.add_header("Authorization", f"Bearer {TOKEN}")
+              with urllib.request.urlopen(req) as r:
+                  return json.load(r)
+
+
+          def clean(cell):
+              return re.sub(r"[*_`]", "", cell).strip()
+
+
+          # 1. Parse every backlog row: | US xx.xx.xx | story | points | risk | half-way |
+          rows, errors = {}, []
+          for line in open(BACKLOG, encoding="utf-8"):
+              cells = [clean(c) for c in line.strip().strip("|").split("|")]
+              if len(cells) < 5 or not ID_RE.fullmatch(cells[0]):
+                  continue
+              sid, points, risk, half = cells[0], cells[-3], cells[-2].capitalize(), cells[-1].capitalize()
+              if not points.isdigit() or risk not in ("Low", "Medium", "High") or half not in ("Yes", "No"):
+                  errors.append(f"{sid}: can't read points/risk/half-way from {cells[-3:]}")
+                  continue
+              rows[sid] = (points, risk, half)
+
+          if errors:
+              raise ValueError("Fix these backlog rows in the wiki first:\n  " + "\n  ".join(errors))
+          print(f"Read {len(rows)} stories from the backlog.")
+
+          # 2. Load all issues and index them by the US id at the start of the title
+          issues, page = {}, 1
+          while True:
+              batch = api("GET", f"/repos/{REPO}/issues?state=all&per_page=100&page={page}")
+              for i in batch:
+                  m = ID_RE.match(i["title"])
+                  if m and "pull_request" not in i:
+                      issues[m.group(0)] = i
+              if len(batch) < 100:
+                  break
+              page += 1
+
+          # 3. Update each issue whose body or labels disagree with the backlog
+          changed = 0
+          for sid, (points, risk, half) in rows.items():
+              issue = issues.get(sid)
+              if not issue:
+                  print(f"WARNING {sid}: no issue found with this ID in its title")
+                  continue
+              body = issue["body"] or ""
+              new_body = re.sub(r"(?m)^- Story points:.*$", f"- Story points: {points}", body)
+              new_body = re.sub(r"(?m)^- Risk:.*$", f"- Risk: {risk}", new_body)
+              new_body = re.sub(r"(?m)^- Half-way checkpoint:.*$", f"- Half-way checkpoint: {half}", new_body)
+              if "## Estimate" not in body:
+                  print(f"WARNING #{issue['number']} {sid}: no '## Estimate' section, only labels will be synced")
+
+              old_labels = [l["name"] for l in issue["labels"]]
+              new_labels = [l for l in old_labels if not l.startswith(("risk:", "half-way:"))]
+              new_labels += [f"risk: {risk.lower()}", f"half-way: {half.lower()}"]
+
+              if new_body == body and sorted(new_labels) == sorted(old_labels):
+                  continue
+              changed += 1
+              what = []
+              if new_body != body:
+                  what.append("estimate text")
+              if sorted(new_labels) != sorted(old_labels):
+                  what.append(f"labels {sorted(set(old_labels) - set(new_labels))} -> {sorted(set(new_labels) - set(old_labels))}")
+              print(f"{'WOULD UPDATE' if DRY else 'Updated'} #{issue['number']} {sid}: {'; '.join(what)}")
+              if not DRY:
+                  api("PATCH", f"/repos/{REPO}/issues/{issue['number']}", {"body": new_body, "labels": new_labels})
+
+          for sid in sorted(set(issues) - set(rows)):
+              print(f"NOTE #{issues[sid]['number']} {sid}: issue isn't in the backlog table (left alone)")
+          print(f"Done: {changed} issue(s) {'need updating' if DRY else 'updated'}.")
+          PY
