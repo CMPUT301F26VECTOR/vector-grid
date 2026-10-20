@@ -1,0 +1,127 @@
+# Recalculates the Summary table on the Product Backlog wiki page from the actor tables below it.
+# Put this file at .github/workflows/update-backlog-summary.yml on the default branch.
+# Runs when the Product-Backlog wiki page is saved, or manually from the Actions tab
+# (tick "dry run" to only preview the new Summary table).
+name: Update backlog Summary table
+
+on:
+  gollum:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Only show the new Summary table, don't save it"
+        type: boolean
+        default: true
+
+permissions:
+  contents: write   # needed to push the updated page back to the wiki
+
+concurrency:
+  group: backlog-summary
+  cancel-in-progress: false
+
+jobs:
+  summary:
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.pages.*.page_name, 'Product-Backlog')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get the wiki
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository }}.wiki
+          path: wiki
+
+      - name: Recalculate the Summary table
+        env:
+          BACKLOG: wiki/Product-Backlog.md
+        run: |
+          python3 - <<'PY'
+          import os, re
+
+          BACKLOG = os.environ["BACKLOG"]
+          ID_RE = re.compile(r"US \d{2}\.\d{2}\.\d{2}")
+
+
+          def cells_of(line):
+              return [re.sub(r"[*_`]", "", c).strip() for c in line.strip().strip("|").split("|")]
+
+
+          text = open(BACKLOG, encoding="utf-8").read()
+          lines = text.split("\n")
+
+          # 1. Tally the story rows under each "## <Actor>" heading:
+          #    [stories, total points, half-way stories, half-way points]
+          totals, errors, section = {}, [], None
+          for line in lines:
+              heading = re.match(r"^##\s+(.+?)\s*$", line)
+              if heading:
+                  section = heading.group(1)
+                  continue
+              cells = cells_of(line)
+              if section is None or len(cells) < 5 or not ID_RE.fullmatch(cells[0]):
+                  continue
+              points, risk, half = cells[-3], cells[-2].capitalize(), cells[-1].capitalize()
+              if not points.isdigit() or risk not in ("Low", "Medium", "High") or half not in ("Yes", "No"):
+                  errors.append(f"{cells[0]}: can't read points/risk/half-way from {cells[-3:]}")
+                  continue
+              t = totals.setdefault(section, [0, 0, 0, 0])
+              t[0] += 1
+              t[1] += int(points)
+              if half == "Yes":
+                  t[2] += 1
+                  t[3] += int(points)
+
+          if errors:
+              raise ValueError("Fix these backlog rows in the wiki first:\n  " + "\n  ".join(errors))
+
+          # 2. Find the Summary table (the first table after the "## Summary" heading)
+          start = next((i for i, l in enumerate(lines) if re.match(r"^##\s+Summary\s*$", l)), None)
+          if start is None:
+              raise ValueError("Couldn't find a '## Summary' heading on the page")
+          header = next((i for i in range(start + 1, len(lines)) if lines[i].startswith("|")), None)
+          if header is None or not lines[header + 1].startswith("|"):
+              raise ValueError("Couldn't find the Summary table under '## Summary'")
+          first = header + 2                       # first row after the |---| line
+          end = first
+          while end < len(lines) and lines[end].startswith("|"):
+              end += 1
+
+          # Keep the actor names already used in the Summary (e.g. "Campsite owner"), matched ignoring case
+          names = {cells_of(l)[0].lower(): cells_of(l)[0] for l in lines[first:end]}
+
+          # 3. Build the new rows, one per actor section, plus the Total row
+          rows = []
+          for actor, (n, pts, hn, hpts) in totals.items():
+              rows.append(f"| {names.get(actor.lower(), actor)} | {n} | {pts} | {hn} | {hpts} |")
+          grand = [sum(t[k] for t in totals.values()) for k in range(4)]
+          rows.append("| **Total** | " + " | ".join(f"**{v}**" for v in grand) + " |")
+
+          new_text = "\n".join(lines[:first] + rows + lines[end:])
+          print("\n".join(lines[header:first] + rows))
+          if new_text == text:
+              print("\nSummary table is already up to date.")
+          else:
+              open(BACKLOG, "w", encoding="utf-8").write(new_text)
+              print("\nSummary table recalculated.")
+          PY
+
+      - name: Save the page back to the wiki
+        if: ${{ !inputs.dry_run }}
+        working-directory: wiki
+        run: |
+          if git diff --quiet; then
+            echo "Nothing to save."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -q -am "Automated: recalculate Summary table from the backlog tables"
+          if ! git push -q; then
+            # Someone saved the wiki while this ran: put the Summary change on top of their version
+            if ! (git pull -q --rebase && git push -q); then
+              git rebase --abort 2>/dev/null
+              echo "::error::Couldn't save: the Summary table was edited at the same time. Save the page again to retry."
+              exit 1
+            fi
+          fi
+          echo "Saved the updated Summary table to the wiki."
