@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "235557520889",
+    "project_id": "cmput301-vector",
+    "storage_bucket": "cmput301-vector.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:235557520889:android:962460ff70d0aff338e928",
+        "android_client_info": {
+          "package_name": "com.example.project_halfway"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDNFRUsVz0Vmq4tMCaaLQdZ2N7ITEAz33Y"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
