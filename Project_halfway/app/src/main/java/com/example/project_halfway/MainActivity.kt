@@ -20,8 +20,6 @@ class MainActivity : ComponentActivity() {
         setContent {
             Project_halfwayTheme {
                 LoginScreenUI ()
-
-
             }
         }
     }
