@@ -2,7 +2,7 @@ package com.example.project_halfway
 
 import kotlin.collections.mutableListOf
 
-class AllEntrantsClass {
+class AllEntrants {
     private val _allEntrantsProfile = mutableListOf<EntrantProfile>()
 
     val profiles: List<EntrantProfile>
