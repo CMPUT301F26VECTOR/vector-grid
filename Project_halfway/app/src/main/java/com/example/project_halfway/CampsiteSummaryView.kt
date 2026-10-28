@@ -8,9 +8,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
-class CampsiteSummaryView : ViewObserver<CampsiteModel> {
+class CampsiteSummaryView {
 
-    override fun update(model: CampsiteModel) {
+    fun update(model: CampsiteModel) {
         TODO("Not yet implemented")
     }
 
@@ -23,11 +23,9 @@ class CampsiteSummaryView : ViewObserver<CampsiteModel> {
         ) {
             Column() {
 
-
             }
 
         }
-
     }
 
 }
