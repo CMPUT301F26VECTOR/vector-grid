@@ -40,6 +40,7 @@ fun SignUpScreen () {
     var lastName by remember{mutableStateOf("")}
     var Email by remember{mutableStateOf("")}
     var password by remember {mutableStateOf("")}
+    var createMessage by remember{mutableStateOf("")}
 
     Column(
         modifier = Modifier.fillMaxSize(),
@@ -82,7 +83,7 @@ fun SignUpScreen () {
         OutlinedTextField(
             modifier = Modifier.fillMaxWidth()
                 .padding(horizontal = 20.dp),
-            value = Email,
+            value = lastName,
             leadingIcon = {
                 Icon(
                     painter = painterResource(R.drawable.rounded_contextual_token_24),
@@ -91,9 +92,9 @@ fun SignUpScreen () {
 
                 )
             },
-            onValueChange = {Email = it},
+            onValueChange = {lastName = it},
             label ={Text(text="Last Name")},
-            placeholder = {Text(text="ABC@gmail.com")}
+            placeholder = {Text(text="XYZ ABC")}
         )
         OutlinedTextField(
             modifier = Modifier.fillMaxWidth()
@@ -116,7 +117,7 @@ fun SignUpScreen () {
         OutlinedTextField(
             modifier = Modifier.fillMaxWidth()
                 .padding(horizontal = 20.dp),
-            value = Email,
+            value = password,
             leadingIcon = {
                 Icon(
                     imageVector = Icons.Default.Lock,
@@ -125,16 +126,48 @@ fun SignUpScreen () {
 
                 )
             },
-            onValueChange = {Email = it},
-            label ={Text(text="Email")},
-            placeholder = {Text(text="ABC@gmail.com")}
+            onValueChange = {password = it},
+            label ={Text(text="Passowrd")},
+            placeholder = {Text(text="************")}
         )
 
         Spacer(modifier = Modifier.height(40.dp))
     Button(
         modifier = Modifier.width(200.dp)
                     .height(60.dp),
-        onClick = {},
+        onClick = {
+            FirebaseSecurity.auth.createUserWithEmailAndPassword(Email.trim(),password)
+                .addOnCompleteListener { task ->
+                    if (task.isSuccessful){
+                        var user = FirebaseSecurity.auth.currentUser
+                        if (user!=null) {
+                            val userData = hashMapOf(
+                                "firstName" to firstName,
+                                "lastName" to lastName,
+                                "email" to Email.trim(),
+                                "role" to "entrant"
+                            )
+
+
+                            FirebaseSecurity.db
+                                .collection("Users")
+                                .document(user.uid)
+                                .set(userData)
+                                .addOnSuccessListener { createMessage = "Successful creation"}
+                            firstName =""
+                            lastName =""
+                            Email =""
+                            password=""
+                        }
+
+                    }
+                    else{
+                        createMessage = "failed Creation!"
+                    }
+
+                }
+
+        },
         colors = ButtonDefaults.buttonColors(
             containerColor = Color(0xff566C11)
         )
@@ -142,5 +175,7 @@ fun SignUpScreen () {
         Text(text = "Create Account",
             fontSize = 20.sp)
     }
+
+        Text(text = createMessage)
 }
     }
