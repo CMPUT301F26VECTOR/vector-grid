@@ -1,5 +1,6 @@
 package com.example.project_halfway
 
+import android.content.Intent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -27,6 +28,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.Placeholder
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
@@ -41,6 +43,9 @@ import androidx.compose.ui.unit.sp
 fun LoginScreenUI () {
     var Email by remember{ mutableStateOf("") }
     var Password by remember {mutableStateOf("")}
+    var loginMessage by remember{mutableStateOf("")}
+    val context  = LocalContext.current
+
     Column(
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment =Alignment.CenterHorizontally
@@ -63,6 +68,8 @@ fun LoginScreenUI () {
             fontWeight = FontWeight.Bold,
             fontSize = 32.sp)
 
+
+
         // EMAIL
         OutlinedTextField(
             modifier = Modifier.fillMaxWidth()
@@ -79,6 +86,8 @@ fun LoginScreenUI () {
             label ={Text(text="Email")},
             placeholder = {Text(text="ABC@gmail.com")}
         )
+
+
 
 
         //Password
@@ -102,11 +111,24 @@ fun LoginScreenUI () {
                 .padding(20.dp),
             horizontalArrangement  = Arrangement.SpaceEvenly
         ){
+
+
+            //SIGN IN
             Button(
                 modifier = Modifier.weight(1f)
                     .width(40.dp)
                     .height(40.dp),
-                onClick = {},
+                onClick = {
+                    FirebaseSecurity.auth.signInWithEmailAndPassword(Email.trim(),Password)
+                        .addOnCompleteListener { task ->
+                            if (task.isSuccessful) {
+                                loginMessage = "Login successful!"
+                            } else {
+                                loginMessage = task.exception?.localizedMessage
+                                    ?: "Login failed"
+                            }
+                        }
+                },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color(0xff566C11)
                 )
@@ -116,11 +138,20 @@ fun LoginScreenUI () {
 
             }
             Spacer(modifier = Modifier.width(50.dp))
+
+            //Create Account
             Button(
                 modifier = Modifier.weight(1f)
                         .width(40.dp)
                         .height(40.dp),
-                onClick = {},
+                onClick = {
+                    val intent  = Intent(
+                        context,
+                        EntrantHomeScreenClass::class.java
+                    )
+                    context.startActivity(intent)
+
+                },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color(0xff566C11)
                 )
@@ -131,6 +162,7 @@ fun LoginScreenUI () {
             }
         }
 
+        Text(text=loginMessage)
 
     
 //        Button(

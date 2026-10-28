@@ -19,8 +19,9 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             Project_halfwayTheme {
-                LoginScreenUI ()
-
+                AuthGate()
+                //LoginScreenUI()
+//                SignUpScreen ()
 
             }
         }
