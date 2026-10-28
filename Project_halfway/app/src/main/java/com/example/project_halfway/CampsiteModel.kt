@@ -14,4 +14,21 @@ class CampsiteModel (
     public fun getUserRating() : Double {
         return userRating
     }
+
+    private val views = mutableListOf<CampsiteView>()
+
+    fun addView(view : CampsiteView) {
+        if (view !in views) {
+            views.add(view)
+        }
+    }
+
+    fun removeView(view : CampsiteView) {
+        if (view in views) {
+            views.remove(view)
+        }
+    }
+
+    protected fun notifyViews(campsite : CampsiteModel) {
+    }
 }

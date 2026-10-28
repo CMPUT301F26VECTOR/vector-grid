@@ -10,5 +10,4 @@ class AllCampsites {
     fun addCampsite(newCampsite:CampsiteModel){
         _ArrayofCampsites.add(newCampsite)
     }
-
 }
