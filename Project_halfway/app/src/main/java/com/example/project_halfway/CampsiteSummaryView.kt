@@ -8,25 +8,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
-class CampsiteSummaryView : CampsiteView() {
-
-    fun update(model: CampsiteModel) {
-        TODO("Not yet implemented")
-    }
-
-    @Composable
-    fun CampsiteDescriptionCard(campsite : CampsiteModel) {
-        ElevatedCard(
-            elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
-            modifier = Modifier,
-            onClick = { }  // Needs to link to the full view
-        ) {
-            Column() {
-                RatingStars(campsite)
-
-            }
+@Composable
+fun CampsiteDescriptionCard(campsite : CampsiteModel) {
+    ElevatedCard(
+        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+        modifier = Modifier,
+        onClick = { }  // Needs to link to the full view
+    ) {
+        Column() {
+            RatingStars(campsite)
 
         }
-    }
 
+    }
 }
+

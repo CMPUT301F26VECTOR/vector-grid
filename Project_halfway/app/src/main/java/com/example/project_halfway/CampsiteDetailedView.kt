@@ -8,16 +8,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
-class CampsiteDetailedView : CampsiteView() {
 
-    fun update(model: CampsiteModel) {
-        TODO("Not yet implemented")
-    }
+fun update(model: CampsiteModel) {
+    TODO("Not yet implemented")
+}
 
-    // Detailed campsite view
-    @Composable
-    fun CampsiteDetailedCard(campsite : CampsiteModel) {
-
-    }
+// Detailed campsite view
+@Composable
+fun CampsiteDetailedCard(campsite : CampsiteModel) {
 
 }
+
