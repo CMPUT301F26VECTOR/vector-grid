@@ -1,9 +1,8 @@
 package com.example.project_halfway
 
 class EntrantProfile (
-    private val FirstName: String,
-    private val LastName: String,
-    private val EmailAddress:String,
-    private val Password: String,
-    private val ProfilePicture:String
+    private val firstName: String,
+    private val lastName: String,
+    private val emailAddress:String,
+    private val profilePicture: String
 )
