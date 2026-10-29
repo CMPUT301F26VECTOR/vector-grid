@@ -7,6 +7,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -37,7 +38,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun CampsiteSummaryPreview() {
     val campsite = CampsiteModel("Site 56A", "B Provincial Park",
-        1.0, 1.0, 5, 5.5, "A campsite.", "")
+        "Rockyview County, AB",1.0, 1.0, 5, 5.5, "A campsite.", "")
     Project_halfwayTheme {
         CampsiteDescriptionCard(campsite)
     }
