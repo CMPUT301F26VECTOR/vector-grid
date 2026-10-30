@@ -11,6 +11,7 @@ package com.example.project_halfway
 class CampsiteModel (
     private val campsiteName : String,
     private val campgroundName : String,
+    private val location : String, // City, county, etc.
     private val longitude: Double,
     private val latitude: Double,
     private val occupancy: Int,
@@ -32,20 +33,12 @@ class CampsiteModel (
         return userRating
     }
 
-    private val views = mutableListOf<CampsiteView>()
-
-    fun addView(view : CampsiteView) {
-        if (view !in views) {
-            views.add(view)
-        }
+    public fun getCampsiteName() : String {
+        return campsiteName
     }
 
-    fun removeView(view : CampsiteView) {
-        if (view in views) {
-            views.remove(view)
-        }
+    public fun getCampsiteLocation() : String {
+        return location
     }
 
-    protected fun notifyViews(campsite : CampsiteModel) {
-    }
 }
