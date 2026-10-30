@@ -1,12 +1,9 @@
 package com.example.project_halfway
 
 /**
- * Model for one campsite listing
- *
- * Holds the campsite's data and keeps a list of views to notify when it changes.
- *
- * Outstanding issues: notifyViews() is not implemented yet, and this class
- * does not extend ObservableModel yet.
+ * Model for one campsite listing.
+ * Holds the campsite's data, read through the getter functions.
+ * Outstanding issues: not yet saved to or loaded from Firestore.
  */
 class CampsiteModel (
     private val campsiteName : String,
@@ -19,11 +16,9 @@ class CampsiteModel (
     private val description: String,
     private val imageUrl : String,
 
-    // New fields. Each has a default so existing code that creates a
-    // CampsiteModel with the original eight values still compiles.
+    // CampsiteModel with the original nine values still compiles.
     val id: String = "",
     val ownerId: String = "",
-    val locationName: String = "",
     val type: String = "",
     val services: List<String> = emptyList(),
     val pricePerNight: Double = 0.0
@@ -41,4 +36,27 @@ class CampsiteModel (
         return location
     }
 
+    public fun getCampgroundName() : String {
+        return campgroundName
+    }
+
+    public fun getOccupancy() : Int {
+        return occupancy
+    }
+
+    public fun getDescription() : String {
+        return description
+    }
+
+    public fun getImageUrl() : String {
+        return imageUrl
+    }
+
+    public fun getLatitude() : Double {
+        return latitude
+    }
+
+    public fun getLongitude() : Double {
+        return longitude
+    }
 }
