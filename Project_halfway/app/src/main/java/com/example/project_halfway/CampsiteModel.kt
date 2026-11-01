@@ -3,7 +3,10 @@ package com.example.project_halfway
 /**
  * Model for one campsite listing.
  * Holds the campsite's data, read through the getter functions.
- * Outstanding issues: not yet saved to or loaded from Firestore.
+ * Latitude and longitude come from the owner's map pin (US 02.01.02).
+ * Saving and loading is done in CampsiteRepository.
+ *
+ * Outstanding issues: image upload is not built yet.
  */
 class CampsiteModel (
     private val campsiteName : String,
@@ -16,6 +19,7 @@ class CampsiteModel (
     private val description: String,
     private val imageUrl : String,
 
+    // New fields. Each has a default so existing code that creates a
     // CampsiteModel with the original nine values still compiles.
     val id: String = "",
     val ownerId: String = "",
