@@ -25,7 +25,12 @@ class CampsiteModel (
     val ownerId: String = "",
     val type: String = "",
     val services: List<String> = emptyList(),
-    val pricePerNight: Double = 0.0
+    
+    val pricePerNight: Double = 0.0,
+   // Available campsite dates, not lottery registration dates.
+    val availableDateRanges: List<Map<String, String>> = emptyList()
+   
+    
 ) {
 
     public fun getUserRating() : Double {

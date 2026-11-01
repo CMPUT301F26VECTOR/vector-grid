@@ -83,7 +83,9 @@ object CampsiteRepository {
             "pricePerNight" to c.pricePerNight,
             "userRating" to c.getUserRating(),
             "description" to c.getDescription(),
-            "imageUrl" to c.getImageUrl()
+            "imageUrl" to c.getImageUrl(),
+            "availableDateRanges" to c.availableDateRanges
+
         )
     }
 
@@ -103,7 +105,8 @@ object CampsiteRepository {
             ownerId = text(m, "ownerId"),
             type = text(m, "type"),
             services = textList(m, "services"),
-            pricePerNight = number(m, "pricePerNight")
+            pricePerNight = number(m, "pricePerNight"),
+            availableDateRanges = dateRanges(m, "availableDateRanges")
         )
     }
 
@@ -124,5 +127,32 @@ object CampsiteRepository {
             return value.filterIsInstance<String>()
         }
         return listOf()
+    }
+       // Reads available date ranges stored in Firestore.
+
+    private fun dateRanges(
+        m: Map<String, Any>,
+        key: String
+    ): List<Map<String, String>> {
+
+        val value = m[key]
+        val ranges = mutableListOf<Map<String, String>>()
+
+        if (value is List<*>) {
+            for (item in value) {
+                if (item is Map<*, *>) {
+                    val start = item["start"]
+                    val end = item["end"]
+
+                    if (start is String && end is String) {
+                        ranges.add(
+                            mapOf("start" to start, "end" to end)
+                        )
+                    }
+                }
+            }
+        }
+
+        return ranges
     }
 }
