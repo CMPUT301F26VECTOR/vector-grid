@@ -85,6 +85,7 @@ object CampsiteRepository {
             "description" to c.getDescription(),
             "imageUrl" to c.getImageUrl(),
             "availableDateRanges" to c.availableDateRanges
+
         )
     }
 
@@ -127,6 +128,7 @@ object CampsiteRepository {
         }
         return listOf()
     }
+       // Reads available date ranges stored in Firestore.
 
     private fun dateRanges(
         m: Map<String, Any>,
