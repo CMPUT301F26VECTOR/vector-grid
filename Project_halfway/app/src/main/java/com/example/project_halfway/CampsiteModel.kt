@@ -3,7 +3,6 @@ package com.example.project_halfway
 /**
  * Model for one campsite listing.
  * Holds the campsite's data, read through the getter functions.
-
  * Latitude and longitude come from the owner's map pin (US 02.01.02).
  * Saving and loading is done in CampsiteRepository.
  *
