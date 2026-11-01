@@ -3,6 +3,7 @@ package com.example.project_halfway
 /**
  * Model for one campsite listing.
  * Holds the campsite's data, read through the getter functions.
+
  * Latitude and longitude come from the owner's map pin (US 02.01.02).
  * Saving and loading is done in CampsiteRepository.
  *
@@ -25,8 +26,12 @@ class CampsiteModel (
     val ownerId: String = "",
     val type: String = "",
     val services: List<String> = emptyList(),
+    
     val pricePerNight: Double = 0.0,
-    val availableDateRanges: List<Map<String, String>> = emptyList() //date range for campsite availability and not lottery
+   // Available campsite dates, not lottery registration dates.
+    val availableDateRanges: List<Map<String, String>> = emptyList()
+   
+    
 ) {
 
     public fun getUserRating() : Double {
