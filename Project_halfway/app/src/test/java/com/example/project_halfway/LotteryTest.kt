@@ -1,0 +1,117 @@
+package com.example.project_halfway
+
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
+import org.junit.Test
+
+// Tests for the Lottery model (US 01.01.06, 01.02.01, 01.02.02)
+
+class LotteryTest {
+
+    private val oneDay = 24 * 60 * 60 * 1000L
+
+    // pretend "today" is this time so the tests always give the same answer
+    private val today = 1_780_000_000_000L
+
+    // lottery that started 2 days ago and ends in 5 days
+    private fun openLottery(): Lottery {
+        return Lottery(
+            id = "lottery_1",
+            campsiteId = "camp_001",
+            startDate = today - 2 * oneDay,
+            endDate = today + 5 * oneDay
+        )
+    }
+
+    // lottery that already ended
+    private fun closedLottery(): Lottery {
+        return Lottery(
+            id = "lottery_2",
+            campsiteId = "camp_001",
+            startDate = today - 10 * oneDay,
+            endDate = today - 3 * oneDay
+        )
+    }
+
+    @Test
+    fun isActive_trueWhileOpen() {
+        assertTrue(openLottery().isActive(today))
+    }
+
+    @Test
+    fun isActive_falseAfterItEnds() {
+        assertFalse(closedLottery().isActive(today))
+    }
+
+    @Test
+    fun isActive_falseBeforeItStarts() {
+        val lottery = Lottery("lottery_3", "camp_001", today + oneDay, today + 7 * oneDay)
+        assertFalse(lottery.isActive(today))
+    }
+
+    @Test
+    fun join_addsEntrant() {
+        val lottery = openLottery()
+
+        assertTrue(lottery.joinWaitingList("entrant_parneet", today))
+        assertTrue(lottery.isOnWaitingList("entrant_parneet"))
+        assertEquals(1, lottery.getWaitingListSize())
+    }
+
+    @Test
+    fun join_twice_onlyAddsOnce() {
+        val lottery = openLottery()
+        lottery.joinWaitingList("entrant_parneet", today)
+
+        assertFalse(lottery.joinWaitingList("entrant_parneet", today))
+        assertEquals(1, lottery.getWaitingListSize())
+    }
+
+    @Test
+    fun join_closedLottery_notAllowed() {
+        val lottery = closedLottery()
+
+        assertFalse(lottery.joinWaitingList("entrant_parneet", today))
+        assertEquals(0, lottery.getWaitingListSize())
+    }
+
+    @Test
+    fun join_blankId_notAllowed() {
+        val lottery = openLottery()
+        assertFalse(lottery.joinWaitingList("", today))
+    }
+
+    @Test
+    fun leave_removesEntrant() {
+        val lottery = openLottery()
+        lottery.joinWaitingList("entrant_parneet", today)
+        lottery.joinWaitingList("entrant_deepali", today)
+
+        assertTrue(lottery.leaveWaitingList("entrant_parneet"))
+        assertFalse(lottery.isOnWaitingList("entrant_parneet"))
+        assertTrue(lottery.isOnWaitingList("entrant_deepali"))
+        assertEquals(1, lottery.getWaitingListSize())
+    }
+
+    @Test
+    fun leave_whenNotOnList_returnsFalse() {
+        val lottery = openLottery()
+        assertFalse(lottery.leaveWaitingList("entrant_parneet"))
+    }
+
+    @Test
+    fun canJoinAgainAfterLeaving() {
+        val lottery = openLottery()
+        lottery.joinWaitingList("entrant_parneet", today)
+        lottery.leaveWaitingList("entrant_parneet")
+
+        assertTrue(lottery.joinWaitingList("entrant_parneet", today))
+    }
+
+    @Test
+    fun getDaysLeft_countsDays() {
+        assertEquals(5, openLottery().getDaysLeft(today))
+        assertEquals(0, closedLottery().getDaysLeft(today))
+    }
+}
