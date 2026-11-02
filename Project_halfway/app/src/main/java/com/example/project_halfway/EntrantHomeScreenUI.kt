@@ -16,6 +16,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AccountCircle
 import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -40,6 +41,7 @@ private val HomeGreen = Color(0xFF526B0D)
  */
 @Composable
 fun EntrantHomeScreenUI(
+    onExit: () -> Unit,
     onBrowseClick: () -> Unit = {}
 ) {
     Column(
@@ -69,6 +71,9 @@ fun EntrantHomeScreenUI(
                 tint = Color.White,
                 modifier = Modifier.size(36.dp)
             )
+        }
+        Button(onClick = onExit) {
+            Text("SIGNOUT")
         }
 
         Spacer(modifier = Modifier.height(28.dp))
@@ -110,14 +115,17 @@ fun EntrantHomeScreenUI(
                     color = Color.Gray,
                     lineHeight = 17.sp
                 )
+
+//        }
             }
+
         }
     }
 }
 
 
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-fun EntrantHomeScreenPreview() {
-    EntrantHomeScreenUI()
-}
+//@Preview(showBackground = true, showSystemUi = true)
+//@Composable
+//fun EntrantHomeScreenPreview() {
+//    EntrantHomeScreenUI()
+//}
