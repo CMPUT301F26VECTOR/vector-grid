@@ -43,3 +43,15 @@ fun CampsiteSummaryPreview() {
         CampsiteDescriptionCard(campsite)
     }
 }
+
+// UI preview for CampsiteDetailedCard
+@Preview(showBackground = true)
+@Composable
+fun CampsiteDetailedPreview() {
+    val campsite = CampsiteModel("Site 56A", "B Provincial Park",
+        "Rockyview County, AB",1.0, 1.0, 5, 5.5, "A campsite.", "",
+        "","","Tent site",mutableListOf("Power","Non-potable water"),43.00)
+    Project_halfwayTheme {
+        CampsiteDetailedCard(campsite, true,{},{})
+    }
+}
