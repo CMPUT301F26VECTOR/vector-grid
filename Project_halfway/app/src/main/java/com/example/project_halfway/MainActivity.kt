@@ -16,6 +16,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.core.view.WindowCompat.enableEdgeToEdge
 import com.example.project_halfway.ui.theme.Project_halfwayTheme
 
 class MainActivity : ComponentActivity() {

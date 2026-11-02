@@ -1,8 +1,15 @@
 package com.example.project_halfway
 
-class EntrantProfile (
-    private val firstName: String,
-    private val lastName: String,
-    private val emailAddress:String,
-    private val profilePicture: String
+//data class EntrantProfile (
+//    val Name: String,
+//    val : String,
+//    val emailAddress:String,
+//    val profilePicture: String
+//)
+data class EntrantProfile (
+    val Name: String,
+    val EmailAddress:String,
+    val PhoneNumber: String,
+    val ProfilePicture:String,
+    val uid:String
 )
