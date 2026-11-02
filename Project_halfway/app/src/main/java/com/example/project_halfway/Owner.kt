@@ -1,10 +1,10 @@
 package com.example.project_halfway
 
-class Owner (
-    private val Name:String,
-    private val EmailAddress:String,
-    private val Password: String,
-    private val ProfilePictureURL:String
+data class Owner (
+    val Name:String,
+    val EmailAddress:String,
+    val ProfilePictureURL: String,
+    val uid:String
 ){
     private val _allOwnerCampsites = mutableListOf<CampsiteModel>()
 
