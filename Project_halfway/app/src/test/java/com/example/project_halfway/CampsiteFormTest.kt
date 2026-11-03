@@ -99,7 +99,7 @@ class CampsiteFormTest {
         assertEquals(43.0, campsite.getPricePerNight(), 0.001)
         assertEquals("owner_7", campsite.getOwnerId())
         assertEquals("", campsite.getId()) // Firestore picks the id when it saves
-        assertEquals(1, campsite.availableDateRanges.size)
+        assertEquals(1, campsite.getAvailableDateRanges().size)
     }
 
     @Test
