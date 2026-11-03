@@ -29,9 +29,10 @@ import com.google.firebase.firestore.Source
  * The owner-side functions added for US 02.05.01 and 02.09.01
  * (getLotteriesForCampsite, drawIfDue, getEntrantNames) use ownerDb.
  *
- * Outstanding issues: no delete yet, and creating a lottery is only here so the
- * owner side can use it later. The draw runs when the owner opens the lottery's
- * waitlist screen after registration closes, not on a server timer (see drawIfDue).
+ * Outstanding issues: no delete yet. Lotteries are created through save from
+ * CreateLotteryScreen, which is test-only until Mejida's screen replaces it.
+ * The draw runs when the owner opens the lottery's waitlist screen after
+ * registration closes, not on a server timer (see drawIfDue).
  */
 object LotteryRepository {
 

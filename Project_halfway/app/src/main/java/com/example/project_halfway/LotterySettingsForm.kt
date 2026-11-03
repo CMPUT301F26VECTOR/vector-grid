@@ -114,6 +114,7 @@ data class LotterySettings(
         return toLottery("", zone = zone).firstSettingsError(now, zone)
     }
 
+    /** Turns date picker values into times and text; used by the form and by toLottery. */
     companion object {
         /** The picked day (midnight UTC) as the start of that day in the owner's zone. */
         fun startOfDay(pickerMillis: Long, zone: ZoneId): Long {
@@ -157,8 +158,9 @@ data class LotterySettings(
  *
  * Used for US 02.04.03, US 02.04.04, US 02.04.05 and US 02.04.07.
  *
- * Outstanding issues: the create-lottery screen that uses this form
- * (US 02.04.01, US 02.04.02) is not built yet.
+ * Outstanding issues: it is used by CreateLotteryScreen, which was written
+ * only to test it; the full create-lottery screen (US 02.04.01, US 02.04.02)
+ * is Mejida's to complete.
  *
  * @param settings what the owner has entered so far
  * @param onSettingsChange called with the new settings whenever the owner changes something
