@@ -63,7 +63,7 @@ fun RegisteredCampsitesList(campsites: List<CampsiteModel>) {
         } else {
             LazyColumn(modifier = Modifier.testTag("campsite_list")) {
                 items(campsites) { campsite ->
-                    CampsiteDescriptionCard(campsite)
+                    CampsiteDescriptionCard(campsite, {})
                 }
             }
         }
