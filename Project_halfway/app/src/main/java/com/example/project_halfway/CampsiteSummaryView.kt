@@ -19,18 +19,18 @@ import androidx.compose.ui.unit.dp
  * a "days left in lottery" badge. Shared by the entrant's browse screen and
  * the owner's Registered Campsites list.
  *
- * Outstanding issues: tapping the card does not open the detailed view yet,
- * the available dates line is a placeholder, and the days-left badge always
+ * Outstanding issues: the available dates line is a placeholder, and the days-left badge always
  * shows 6.
  *
  * @param campsite the campsite to show
+ * @param onClick the action to be completed when the summary card is clicked
  */
 @Composable
-fun CampsiteDescriptionCard(campsite : CampsiteModel) {
+fun CampsiteDescriptionCard(campsite : CampsiteModel, onClick: () -> Unit) {
     ElevatedCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
         modifier = Modifier.padding(20.dp),
-        onClick = { }  // Needs to link to the full view
+        onClick = { onClick() }  // Needs to link to the full view
     ) {
         Column() {
             RatingStars(campsite)
@@ -44,6 +44,12 @@ fun CampsiteDescriptionCard(campsite : CampsiteModel) {
 
             Text(
                 campsite.getCampsiteLocation(),
+                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                style = MaterialTheme.typography.bodyLarge
+            )
+
+            Text(
+                campsite.getOccupancy().toString() + " guests",
                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                 style = MaterialTheme.typography.bodyLarge
             )

@@ -1,20 +1,18 @@
 package com.example.project_halfway
 
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.media3.common.StarRating
 import androidx.compose.foundation.layout.Row
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.StarHalf
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.StarBorder
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.ui.graphics.Color
-
-
 /*
 For UI components common to each campsite view
  */
@@ -26,6 +24,7 @@ For UI components common to each campsite view
  * empty.
  *
  * Outstanding issues: None known.
+ * yet.
  *
  * @param campsite the campsite whose rating is to shown
  */
@@ -33,6 +32,17 @@ For UI components common to each campsite view
 fun RatingStars(campsite : CampsiteModel) {
     val rating = campsite.getUserRating()
     val maxStarRating = 5
+
+    // Indicates no user ratings. Style better later
+    if (rating == 0.0) {
+        Text(
+            "No user ratings.",
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+            style = MaterialTheme.typography.bodyLarge
+        )
+
+        return
+    }
 
     Row(modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)) {
         for (i in 1..maxStarRating) {

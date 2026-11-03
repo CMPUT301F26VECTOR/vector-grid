@@ -18,7 +18,7 @@ class CampsiteModel (
     private val longitude: Double,
     private val latitude: Double,
     private val occupancy: Int,
-    private val userRating: Double,
+    private val userRating: Double = 0.0,
     private val description: String,
     private val imageUrl : String,
 
@@ -104,5 +104,12 @@ class CampsiteModel (
     public fun getTags() : List<String> {
         return tags
     }
+/*
+    /** Returns the available date ranges for an entrant to register Empty if none. */
+    public fun getAvailableDateRanges() : List<Map<String, String>> {
+        return availableDateRanges
+    }
+
+ */
 
 }
