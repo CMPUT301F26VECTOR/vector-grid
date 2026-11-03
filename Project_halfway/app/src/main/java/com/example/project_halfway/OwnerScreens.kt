@@ -39,8 +39,6 @@ import androidx.compose.ui.unit.dp
  *
  * Outstanding issues: which screen is open is kept in memory only, so turning
  * the phone or restarting the app returns to the owner home. The owner home
- * Outstanding issues: which screen is open is kept in memory only, so turning
- * the phone or restarting the app returns to the owner home. The owner home
  * itself is still the placeholder layout in OwnerHomeScreenUI.
  *
  * @param ownerId user id of the signed in owner; saved on new campsites and
@@ -122,8 +120,7 @@ fun OwnerScreens(ownerId: String, onSignOut: () -> Unit) {
         "createLottery" -> {
             if (chosen != null) {
                 WithBackArrow(onBack = { screen = ownerBackTarget(screen) }) {
-                    CreateLotteryScreen(campsiteId = chosen.getId(), campsiteName = chosen.getCampsiteName()
-                    )
+                    CreateLotteryScreen(campsiteId = chosen.getId(), campsiteName = chosen.getCampsiteName())
                 }
             }
         }
