@@ -1,0 +1,70 @@
+# Rebuilds the single "Code Documentation" wiki page from the KDoc comments in
+# the Kotlin source (the same comments Dokka uses), so the wiki always matches
+# the code on main. GitHub wikis can only show Markdown, not Dokka's HTML site,
+# so .github/scripts/kdoc_to_wiki.py writes the whole documentation as one
+# organised Markdown page. The full Dokka site is published by dokka-pages.yml.
+#
+# Runs on every push to main that changes app code, or by hand from the Actions tab.
+# Only Code-Documentation.md is written (and any old Docs-*.md pages from an
+# earlier version are deleted); every other wiki page is left alone.
+name: Update wiki code documentation
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - "Project_halfway/app/src/main/**"
+      - ".github/scripts/kdoc_to_wiki.py"
+      - ".github/workflows/wiki-code-docs.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write   # needed to push the generated pages to the wiki
+
+concurrency:
+  group: wiki-code-docs
+  cancel-in-progress: false
+
+jobs:
+  wiki-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get the code
+        uses: actions/checkout@v4
+        with:
+          path: code
+
+      - name: Get the wiki
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository }}.wiki
+          path: wiki
+
+      - name: Generate the page from KDoc
+        run: >
+          python3 code/.github/scripts/kdoc_to_wiki.py
+          code/Project_halfway/app/src/main/java
+          wiki
+          "${{ github.repository }}"
+          main
+
+      - name: Save the page to the wiki
+        working-directory: wiki
+        run: |
+          git add -A -- 'Code-Documentation.md' 'Docs-*.md'
+          if git diff --cached --quiet; then
+            echo "Documentation pages are already up to date."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -q -m "Automated: update code documentation from KDoc (${GITHUB_SHA::7})"
+          if ! git push -q; then
+            # Someone saved the wiki while this ran: put these pages on top of their version
+            if ! (git pull -q --rebase && git push -q); then
+              git rebase --abort 2>/dev/null
+              echo "::error::Couldn't save the documentation pages. Re-run this workflow to retry."
+              exit 1
+            fi
+          fi
+          echo "Saved the updated documentation pages to the wiki."

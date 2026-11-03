@@ -1,6 +1,7 @@
 
 package com.example.project_halfway
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -36,8 +37,16 @@ private val BrowseGreen = Color(0xFF526B0D)
  * US 01.01.01 - Search by name, campground, or location.
  * US 01.01.02 - Filter by location, occupancy, and dates.
  * US 01.01.03 - Display matching campsite listings.
+ * US 01.01.05 - Tapping a campsite card opens its details.
+ * US 01.01.06, 01.02.01, 01.02.02 - The details show LotterySection, so the
+ * entrant can join or leave that campsite's lottery waitlist.
  *
- * Campsite data is retrieved from Firestore.
+ * Campsite data is retrieved from Firestore. If loading fails, a message
+ * replaces the loading spinner.
+ *
+ * Outstanding issues: the tapped campsite is kept in memory only, so turning
+ * the phone goes back to the list. The phone's back button closes the details
+ * but is not handled on the list itself.
  *
  * @param onBackClick Returns to Entrant Home.
  * @param onFilterClick Optional callback when filters are opened.
@@ -81,12 +90,28 @@ fun BrowseCampsitesScreenUI(
         mutableStateOf<String?>(null)
     }
 
+    // The campsite whose card was tapped, or null while the list is showing.
+    var selectedCampsite by remember {
+        mutableStateOf<CampsiteModel?>(null)
+    }
+
+    // Shown instead of the list if Firestore could not be reached.
+    var loadError by remember {
+        mutableStateOf("")
+    }
+
     // Retrieve campsite listings from Firebase.
     LaunchedEffect(Unit) {
-        CampsiteRepository.getAll { loadedCampsites ->
-            campsites = loadedCampsites
-            isLoading = false
-        }
+        CampsiteRepository.getAll(
+            onFailure = {
+                loadError = "Could not load campsites. Check your connection and try again."
+                isLoading = false
+            },
+            onResult = { loadedCampsites ->
+                campsites = loadedCampsites
+                isLoading = false
+            }
+        )
     }
 
     val search = remember { CampSearch() }
@@ -118,7 +143,21 @@ fun BrowseCampsitesScreenUI(
         locationAndGuestResults
     }
 
-    if (showFilters) {
+    val chosen = selectedCampsite
+
+    if (chosen != null) {
+        // US 01.01.05: the tapped campsite's details (Mirah's card).
+        // Its action area holds Parneet's LotterySection: join or leave the waitlist.
+        BackHandler { selectedCampsite = null }
+
+        CampsiteDetailedCard(
+            campsite = chosen,
+            isLotteryActive = true,
+            onBackClick = { selectedCampsite = null },
+            onJoinClick = {},
+            actionArea = { LotterySection(chosen.getId()) }
+        )
+    } else if (showFilters) {
         // Display the Add Search Filters layout.
         CampFilterScreenUI(
             initialLocation = locationFilter,
@@ -223,6 +262,12 @@ fun BrowseCampsitesScreenUI(
                     modifier = Modifier.padding(20.dp),
                     color = Color.White
                 )
+            } else if (loadError.isNotEmpty()) {
+                Text(
+                    text = loadError,
+                    color = Color.White,
+                    modifier = Modifier.padding(20.dp)
+                )
             } else if (results.isEmpty()) {
                 Text(
                     text = "No campsites found",
@@ -235,7 +280,8 @@ fun BrowseCampsitesScreenUI(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     items(results) { campsite ->
-                        CampsiteDescriptionCard(campsite)
+                        // Tapping a card opens its details (see the top of this function)
+                        CampsiteDescriptionCard(campsite, onClick = { selectedCampsite = campsite })
                     }
                 }
             }
@@ -249,6 +295,14 @@ fun BrowseCampsitesScreenUI(
  * Allows entrants to select location, guest capacity and a check-in/check-out date range.
  *
  * Filter values are returned to Browse Campsites.
+ *
+ * @param initialLocation the location filter already chosen, shown in the box
+ * @param initialGuests the guest count already chosen, as text
+ * @param initialCheckIn the check-in date already chosen, or null
+ * @param initialCheckOut the check-out date already chosen, or null
+ * @param onBackClick called when the back arrow is pressed
+ * @param onApplyFilters called with location, guests, check-in and check-out
+ * when the filters are applied
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

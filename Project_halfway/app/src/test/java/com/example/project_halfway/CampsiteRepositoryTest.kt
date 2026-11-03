@@ -45,11 +45,11 @@ class CampsiteRepositoryTest {
         assertEquals(4.5, copy.getUserRating(), 0.0001)
         assertEquals("Quiet tent site near the lake", copy.getDescription())
         assertEquals("https://example.com/site56a.jpg", copy.getImageUrl())
-        assertEquals("camp_001", copy.id)
-        assertEquals("owner_7", copy.ownerId)
-        assertEquals("Tent site", copy.type)
-        assertEquals(listOf("Power", "Non-potable water"), copy.services)
-        assertEquals(43.0, copy.pricePerNight, 0.0001)
+        assertEquals("camp_001", copy.getId())
+        assertEquals("owner_7", copy.getOwnerId())
+        assertEquals("Tent site", copy.getType())
+        assertEquals(listOf("Power", "Non-potable water"), copy.getServices())
+        assertEquals(43.0, copy.getPricePerNight(), 0.0001)
     }
 
     @Test
@@ -66,7 +66,24 @@ class CampsiteRepositoryTest {
 
         assertEquals("", copy.getCampsiteName())
         assertEquals(0, copy.getOccupancy())
-        assertEquals(0.0, copy.pricePerNight, 0.0001)
-        assertEquals("camp_002", copy.id)
+        assertEquals(0.0, copy.getPricePerNight(), 0.0001)
+        assertEquals("camp_002", copy.getId())
+    }
+
+    @Test
+    fun toMapThenFromMap_keepsTagsAndDates() {
+        // US 02.01.02: tags and available dates must survive the trip to Firestore
+        val original = CampsiteModel(
+            "Site 12", "Elk Island", "Fort Saskatchewan, AB", -112.86, 53.61,
+            4, 0.0, "Walk-in site", "",
+            tags = listOf("Lakeside", "Pet friendly"),
+            availableDateRanges = listOf(mapOf("start" to "2027-06-01", "end" to "2027-06-15"))
+        )
+
+        val copy = CampsiteRepository.fromMap("camp_003", CampsiteRepository.toMap(original))
+
+        assertEquals(listOf("Lakeside", "Pet friendly"), copy.getTags())
+        assertEquals("2027-06-01", copy.getAvailableDateRanges()[0]["start"])
+        assertEquals("2027-06-15", copy.getAvailableDateRanges()[0]["end"])
     }
 }
