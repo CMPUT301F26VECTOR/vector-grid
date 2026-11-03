@@ -11,7 +11,8 @@ import com.google.firebase.auth.FirebaseAuth
  * Decides which screen to show, starting with WelcomeScreen:
  * - Entrant: signs in with the device (EntrantAuthManager), then shows the
  *   entrant home screen, which can open Browse Campsites
- * - Campsite Owner: shows LoginScreenUI, then OwnerHomeScreenUI after login
+ * - Campsite Owner: shows LoginScreenUI, then the owner's screens
+ *   (OwnerScreens, starting at the owner home) after login
  *
  * Used for US 01.09.01 and the owner login.
  *
@@ -111,7 +112,9 @@ fun AuthGate() {
             }
         )
 
-        "owner" -> OwnerHomeScreenUI(
+        "owner" -> OwnerScreens(
+            // the signed in owner's id, so their campsites are saved and loaded under it
+            ownerId = FirebaseSecurity.ownerAuth.currentUser?.uid ?: "",
             onSignOut = {
                 FirebaseSecurity.ownerAuth.signOut()
                 screen = "welcome"

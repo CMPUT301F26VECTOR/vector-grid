@@ -25,9 +25,14 @@ import androidx.compose.ui.unit.dp
  * The ownerId has to be passed in by the screen that opens this one.
  *
  * @param ownerId user id of the signed in campsite owner
+ * @param onCampsiteClick called with the campsite the owner taps; the screen
+ * that shows this list decides what opens (OwnerScreens opens its details)
  */
 @Composable
-fun RegisteredCampsitesScreen(ownerId: String = "") {
+fun RegisteredCampsitesScreen(
+    ownerId: String = "",
+    onCampsiteClick: (CampsiteModel) -> Unit = {}
+) {
 
     // The campsites we have loaded so far (empty until Firestore answers)
     var campsites by remember { mutableStateOf(listOf<CampsiteModel>()) }
@@ -39,7 +44,7 @@ fun RegisteredCampsitesScreen(ownerId: String = "") {
         }
     }
 
-    RegisteredCampsitesList(campsites)
+    RegisteredCampsitesList(campsites, onCampsiteClick)
 }
 
 /**
@@ -48,9 +53,13 @@ fun RegisteredCampsitesScreen(ownerId: String = "") {
  * It does not talk to Firestore, so it can be tested on its own.
  *
  * @param campsites the owner's campsites to show
+ * @param onCampsiteClick called with the campsite whose card is tapped
  */
 @Composable
-fun RegisteredCampsitesList(campsites: List<CampsiteModel>) {
+fun RegisteredCampsitesList(
+    campsites: List<CampsiteModel>,
+    onCampsiteClick: (CampsiteModel) -> Unit = {}
+) {
     Column(modifier = Modifier.padding(16.dp)) {
 
         Text("Registered Campsites")
@@ -63,7 +72,7 @@ fun RegisteredCampsitesList(campsites: List<CampsiteModel>) {
         } else {
             LazyColumn(modifier = Modifier.testTag("campsite_list")) {
                 items(campsites) { campsite ->
-                    CampsiteDescriptionCard(campsite, {})
+                    CampsiteDescriptionCard(campsite, onClick = { onCampsiteClick(campsite) })
                 }
             }
         }

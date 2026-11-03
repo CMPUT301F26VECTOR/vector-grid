@@ -1,6 +1,7 @@
 
 package com.example.project_halfway
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -36,14 +37,16 @@ private val BrowseGreen = Color(0xFF526B0D)
  * US 01.01.01 - Search by name, campground, or location.
  * US 01.01.02 - Filter by location, occupancy, and dates.
  * US 01.01.03 - Display matching campsite listings.
+ * US 01.01.05 - Tapping a campsite card opens its details.
+ * US 01.01.06, 01.02.01, 01.02.02 - The details show LotterySection, so the
+ * entrant can join or leave that campsite's lottery waitlist.
  *
- * Campsite data is retrieved from Firestore.
+ * Campsite data is retrieved from Firestore. If loading fails, a message
+ * replaces the loading spinner.
  *
- * Outstanding issues: tapping a campsite card does not open its details yet,
- * and if loading from Firestore fails the screen keeps showing the loading
- * message (CampsiteRepository.getAll does not report failures).
- * Need to query Firestore to determine if a lottery is active on displaying
- * SummaryCards during browse
+ * Outstanding issues: the tapped campsite is kept in memory only, so turning
+ * the phone goes back to the list. The phone's back button closes the details
+ * but is not handled on the list itself.
  *
  * @param onBackClick Returns to Entrant Home.
  * @param onFilterClick Optional callback when filters are opened.
@@ -87,21 +90,28 @@ fun BrowseCampsitesScreenUI(
         mutableStateOf<String?>(null)
     }
 
-    var clickedCampsite by remember {
+    // The campsite whose card was tapped, or null while the list is showing.
+    var selectedCampsite by remember {
         mutableStateOf<CampsiteModel?>(null)
     }
 
-    var showDetailedCard by remember {
-        mutableStateOf(false)
+    // Shown instead of the list if Firestore could not be reached.
+    var loadError by remember {
+        mutableStateOf("")
     }
-
 
     // Retrieve campsite listings from Firebase.
     LaunchedEffect(Unit) {
-        CampsiteRepository.getAll { loadedCampsites ->
-            campsites = loadedCampsites
-            isLoading = false
-        }
+        CampsiteRepository.getAll(
+            onFailure = {
+                loadError = "Could not load campsites. Check your connection and try again."
+                isLoading = false
+            },
+            onResult = { loadedCampsites ->
+                campsites = loadedCampsites
+                isLoading = false
+            }
+        )
     }
 
     val search = remember { CampSearch() }
@@ -133,7 +143,21 @@ fun BrowseCampsitesScreenUI(
         locationAndGuestResults
     }
 
-    if (showFilters) {
+    val chosen = selectedCampsite
+
+    if (chosen != null) {
+        // US 01.01.05: the tapped campsite's details (Mirah's card).
+        // Its action area holds Parneet's LotterySection: join or leave the waitlist.
+        BackHandler { selectedCampsite = null }
+
+        CampsiteDetailedCard(
+            campsite = chosen,
+            isLotteryActive = true,
+            onBackClick = { selectedCampsite = null },
+            onJoinClick = {},
+            actionArea = { LotterySection(chosen.getId()) }
+        )
+    } else if (showFilters) {
         // Display the Add Search Filters layout.
         CampFilterScreenUI(
             initialLocation = locationFilter,
@@ -154,123 +178,113 @@ fun BrowseCampsitesScreenUI(
             }
         )
     } else {
-        if (!showDetailedCard) {
-            // Display Browse Campsites.
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(BrowseGreen)
-                    .padding(16.dp)
+        // Display Browse Campsites.
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(BrowseGreen)
+                .padding(16.dp)
+        ) {
+            // Back arrow and title.
+            Row(
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                // Back arrow and title.
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconButton(onClick = onBackClick) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back",
-                            tint = Color.White
-                        )
-                    }
-
-                    Text(
-                        text = "Browse Campsites",
-                        fontSize = 22.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
+                IconButton(onClick = onBackClick) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Back",
+                        tint = Color.White
                     )
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Text(
+                    text = "Browse Campsites",
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
+            }
 
-                // Search bar and filter button.
-                Row(
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Search bar and filter button.
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                OutlinedTextField(
+                    value = searchText,
+                    onValueChange = {
+                        searchText = it
+                    },
+                    placeholder = {
+                        Text("Search by area, campground")
+                    },
+                    trailingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.Search,
+                            contentDescription = "Search"
+                        )
+                    },
+                    singleLine = true,
+                    shape = CircleShape,
+                    modifier = Modifier.weight(1f),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = Color.White,
+                        unfocusedContainerColor = Color.White,
+                        focusedTextColor = Color.Black,
+                        unfocusedTextColor = Color.Black,
+                        focusedBorderColor = Color.White,
+                        unfocusedBorderColor = Color.White
+                    )
+                )
+
+                IconButton(
+                    onClick = {
+                        showFilters = true
+                        onFilterClick()
+                    }
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.FilterList,
+                        contentDescription = "Filter campsites",
+                        tint = Color.White
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // US 01.01.03: Display matching campsites.
+            if (isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.padding(20.dp),
+                    color = Color.White
+                )
+            } else if (loadError.isNotEmpty()) {
+                Text(
+                    text = loadError,
+                    color = Color.White,
+                    modifier = Modifier.padding(20.dp)
+                )
+            } else if (results.isEmpty()) {
+                Text(
+                    text = "No campsites found",
+                    color = Color.White,
+                    modifier = Modifier.padding(20.dp)
+                )
+            } else {
+                LazyColumn(
                     modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    OutlinedTextField(
-                        value = searchText,
-                        onValueChange = {
-                            searchText = it
-                        },
-                        placeholder = {
-                            Text("Search by area, campground")
-                        },
-                        trailingIcon = {
-                            Icon(
-                                imageVector = Icons.Default.Search,
-                                contentDescription = "Search"
-                            )
-                        },
-                        singleLine = true,
-                        shape = CircleShape,
-                        modifier = Modifier.weight(1f),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedContainerColor = Color.White,
-                            unfocusedContainerColor = Color.White,
-                            focusedTextColor = Color.Black,
-                            unfocusedTextColor = Color.Black,
-                            focusedBorderColor = Color.White,
-                            unfocusedBorderColor = Color.White
-                        )
-                    )
-
-                    IconButton(
-                        onClick = {
-                            showFilters = true
-                            onFilterClick()
-                        }
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.FilterList,
-                            contentDescription = "Filter campsites",
-                            tint = Color.White
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // US 01.01.03: Display matching campsites.
-                if (isLoading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.padding(20.dp),
-                        color = Color.White
-                    )
-                } else if (results.isEmpty()) {
-                    Text(
-                        text = "No campsites found",
-                        color = Color.White,
-                        modifier = Modifier.padding(20.dp)
-                    )
-                } else {
-                    LazyColumn(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        items(results) { campsite ->
-                            CampsiteDescriptionCard(campsite, {
-                                showDetailedCard = true
-                                clickedCampsite = campsite
-                            })
-                        }
+                    items(results) { campsite ->
+                        // Tapping a card opens its details (see the top of this function)
+                        CampsiteDescriptionCard(campsite, onClick = { selectedCampsite = campsite })
                     }
                 }
             }
-        }
-        else {
-            CampsiteDetailedCard(
-                campsite = clickedCampsite!!,
-                isLotteryActive = true, // TODO need to query if a lottery is currently active
-                onBackClick = {
-                    showDetailedCard = false
-                    clickedCampsite = null
-                },
-                onJoinClick = {} // TODO need to link to joining of lottery
-            )
-
         }
     }
 }
