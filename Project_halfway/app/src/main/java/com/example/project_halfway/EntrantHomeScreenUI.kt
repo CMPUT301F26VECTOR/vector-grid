@@ -3,6 +3,7 @@ package com.example.project_halfway
 
 import android.R
 import android.content.Intent
+import androidx.compose.foundation.layout.statusBarsPadding
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -163,6 +164,7 @@ fun EntrantHomeScreenUI(
         modifier = Modifier
             .fillMaxSize()
             .background(HomeGreen)
+            .statusBarsPadding()
             .padding(20.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
