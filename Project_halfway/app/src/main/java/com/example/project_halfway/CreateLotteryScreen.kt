@@ -20,27 +20,21 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 
-// NOTE (Samarth): this screen was written only to test LotterySettingsForm
-// (US 02.04.03, 02.04.04, 02.04.05, 02.04.07) inside the app. The real
-// create-lottery screen (US 02.04.01, US 02.04.02) is Mejida's, and she is
-// expected to complete or replace this block. Keep LotterySettingsForm and the
-// firstError() / toLottery() / LotteryRepository.save calls when doing so.
-
 /**
- * Create Lottery screen for one of the owner's campsites. The owner sets the
- * registration period, the optional booking period, the number of winners and
- * the optional waiting list limit with LotterySettingsForm, then presses Save.
- * The settings are checked with LotterySettings.firstError() and the new
- * lottery is stored with LotteryRepository.save.
+ * Create Lottery screen for one of the owner's campsites (US 02.04.01).
+ * The owner sets the registration period, the optional booking period, the
+ * number of winners and the optional waiting list limit with
+ * LotterySettingsForm, then presses Save. The settings are checked with
+ * LotterySettings.firstError() and the new lottery is stored with
+ * LotteryRepository.save. Entrants then see it on the campsite's details.
  *
- * Used for US 02.04.03, US 02.04.04, US 02.04.05 and US 02.04.07.
+ * Also used for US 02.04.03, US 02.04.04, US 02.04.05 and US 02.04.07.
  *
- * Outstanding issues: written only to test LotterySettingsForm in the app; the
- * full create-lottery screen (US 02.04.01, US 02.04.02) is Mejida's to
- * complete. Save is turned off after one lottery is created, so the owner has
- * to go back and open the screen again to create another.
+ * Outstanding issues: Save is turned off after one lottery is created, so the
+ * owner has to go back and open the screen again to create another.
  *
  * @param campsiteId id of the campsite the lottery is for; saving is refused if blank
+ * @param campsiteName name shown in the title so the owner knows which campsite it is for
  * @param initialSettings what the form starts with; empty by default
  * @param save stores the lottery and reports whether it worked; LotteryRepository.save
  * by default, and replaced in tests so they don't need Firestore
@@ -48,6 +42,7 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun CreateLotteryScreen(
     campsiteId: String,
+    campsiteName: String = "",
     initialSettings: LotterySettings = LotterySettings(),
     save: (Lottery, (Boolean) -> Unit) -> Unit = { lottery, onDone ->
         LotteryRepository.save(lottery, onDone)
@@ -63,7 +58,8 @@ fun CreateLotteryScreen(
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
 
-        Text("Create Lottery", style = MaterialTheme.typography.titleLarge)
+        val title = if (campsiteName.isBlank()) "Create Lottery" else "Create Lottery for $campsiteName"
+        Text(title, style = MaterialTheme.typography.titleLarge, modifier = Modifier.testTag("create_lottery_title"))
 
         // The form scrolls; the Save button below it always stays on screen.
         Column(
