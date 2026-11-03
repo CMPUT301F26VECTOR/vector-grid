@@ -16,8 +16,9 @@ import java.time.LocalDate
 import java.time.ZoneOffset
 
 /**
- * UI tests for CreateLotteryScreen (US 02.04.03, US 02.04.04, US 02.04.05,
- * US 02.04.07). Saving is replaced with a fake, so no Firestore is needed.
+ * UI tests for CreateLotteryScreen (US 02.04.01, US 02.04.03, US 02.04.04,
+ * US 02.04.05, US 02.04.07). Saving is replaced with a fake, so no Firestore
+ * is needed.
  */
 @RunWith(AndroidJUnit4::class)
 class CreateLotteryScreenTest {
@@ -115,5 +116,14 @@ class CreateLotteryScreenTest {
         composeRule.onNodeWithTag("create_lottery_message")
             .assertTextEquals("Please pick a campsite first.")
         assertEquals(false, called)
+    }
+    @Test
+    fun title_showsTheCampsiteName() {
+        composeRule.setContent {
+            CreateLotteryScreen(campsiteId = "camp1", campsiteName = "Site 56A")
+        }
+
+        composeRule.onNodeWithTag("create_lottery_title")
+            .assertTextEquals("Create Lottery for Site 56A")
     }
 }

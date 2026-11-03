@@ -31,7 +31,7 @@ import androidx.compose.ui.unit.dp
  * owner home, Register Campsite (US 02.01.01, US 02.01.02), My Campsites
  * (US 02.03.01), one campsite's details (US 02.01.04), its lottery's
  * waitlist and winners (US 02.05.01, US 02.09.01) and Create Lottery
- * (US 02.04.03, US 02.04.04, US 02.04.05, US 02.04.07).
+ * (US 02.04.01, US 02.04.03, US 02.04.04, US 02.04.05, US 02.04.07).
  *
  * It works like AuthGate: one variable holds the name of the open screen, and
  * each screen gets callbacks that change it. The back arrows and the phone's
@@ -39,8 +39,9 @@ import androidx.compose.ui.unit.dp
  *
  * Outstanding issues: which screen is open is kept in memory only, so turning
  * the phone or restarting the app returns to the owner home. The owner home
- * itself is still the placeholder layout in OwnerHomeScreenUI. Create Lottery
- * is a test-only screen until Mejida's create-lottery screen replaces it.
+ * Outstanding issues: which screen is open is kept in memory only, so turning
+ * the phone or restarting the app returns to the owner home. The owner home
+ * itself is still the placeholder layout in OwnerHomeScreenUI.
  *
  * @param ownerId user id of the signed in owner; saved on new campsites and
  * used to load My Campsites
@@ -98,7 +99,6 @@ fun OwnerScreens(ownerId: String, onSignOut: () -> Unit) {
                                 Text("View waitlist and winners")
                             }
                             Spacer(modifier = Modifier.height(8.dp))
-                            // Test-only entry point; Mejida's create-lottery screen (US 02.04.01) replaces it later
                             OutlinedButton(
                                 onClick = { screen = "createLottery" },
                                 modifier = Modifier.testTag("create_lottery_button")
@@ -122,7 +122,8 @@ fun OwnerScreens(ownerId: String, onSignOut: () -> Unit) {
         "createLottery" -> {
             if (chosen != null) {
                 WithBackArrow(onBack = { screen = ownerBackTarget(screen) }) {
-                    CreateLotteryScreen(campsiteId = chosen.getId())
+                    CreateLotteryScreen(campsiteId = chosen.getId(), campsiteName = chosen.getCampsiteName()
+                    )
                 }
             }
         }
