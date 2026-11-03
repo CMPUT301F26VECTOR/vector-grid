@@ -8,9 +8,9 @@ package com.example.project_halfway
  * Used for US 02.01.01 (register a campsite), US 02.03.01 (owner's campsites)
  * and the entrant browse and search stories.
  *
- * Outstanding issues: no delete or update yet; errors are only printed;
- * getById gives no answer if the id doesn't exist; not tested against the
- * real database.
+ * Outstanding issues: no delete or update yet; only save and getAll report
+ * failures, the other loads just print them; getById gives no answer if the
+ * id doesn't exist; not tested against the real database.
  */
 object CampsiteRepository {
 
@@ -41,9 +41,14 @@ object CampsiteRepository {
     /**
      * Loads every campsite. Firestore answers later, so we pass in what to do with the list.
      *
+     * onFailure comes first on purpose: a block written after the brackets,
+     * getAll { list -> ... }, always goes to the last parameter, so older calls
+     * written that way still mean onResult.
+     *
+     * @param onFailure gets Firestore's error message if loading fails; optional
      * @param onResult gets every campsite; not called if loading fails
      */
-    fun getAll(onResult: (List<CampsiteModel>) -> Unit) {
+    fun getAll(onFailure: (String) -> Unit = {}, onResult: (List<CampsiteModel>) -> Unit) {
         campsites().get()
             .addOnSuccessListener { result ->
                 val list = mutableListOf<CampsiteModel>()
@@ -55,7 +60,10 @@ object CampsiteRepository {
                 }
                 onResult(list)
             }
-            .addOnFailureListener { println("Load failed: ${it.message}") }
+            .addOnFailureListener {
+                println("Load failed: ${it.message}")
+                onFailure(it.message ?: "unknown error")
+            }
     }
 
     /**
