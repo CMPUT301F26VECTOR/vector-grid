@@ -20,9 +20,11 @@ import androidx.compose.ui.unit.dp
  * Loads the owner's campsites from Firestore with CampsiteRepository and
  * shows them with RegisteredCampsitesList.
  *
- * issues: there is no loading message, so the screen looks empty
+ * Outstanding issues: there is no loading message, so the screen looks empty
  * until Firestore answers. The + button from the mockup is not built yet.
  * The ownerId has to be passed in by the screen that opens this one.
+ *
+ * @param ownerId user id of the signed in campsite owner
  */
 @Composable
 fun RegisteredCampsitesScreen(ownerId: String = "") {
@@ -44,6 +46,8 @@ fun RegisteredCampsitesScreen(ownerId: String = "") {
  * Draws the title and one card for each campsite in the list.
  * If the list is empty it shows a short message instead.
  * It does not talk to Firestore, so it can be tested on its own.
+ *
+ * @param campsites the owner's campsites to show
  */
 @Composable
 fun RegisteredCampsitesList(campsites: List<CampsiteModel>) {

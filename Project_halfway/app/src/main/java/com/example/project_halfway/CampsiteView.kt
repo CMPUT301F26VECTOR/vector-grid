@@ -11,6 +11,13 @@ import androidx.media3.common.StarRating
 For UI components common to each campsite view
  */
 
+/**
+ * Shows a campsite's user rating as stars, on both the summary and detailed cards.
+ *
+ * Outstanding issues: not built yet, so it shows nothing for now.
+ *
+ * @param campsite the campsite whose rating to show
+ */
 @Composable
 fun RatingStars(campsite : CampsiteModel) {
     //val starRating = StarRating(5, campsite.getUserRating().toFloat())

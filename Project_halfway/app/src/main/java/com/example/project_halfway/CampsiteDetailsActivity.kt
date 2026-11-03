@@ -6,12 +6,17 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import com.example.project_halfway.ui.theme.Project_halfwayTheme
 
-// Opens the campsite details screen for one campsite.
-// Start it with an Intent and put "campsiteId" and "campsiteName" as extras.
-//
-// Outstanding issues: only the id and name are passed in for now. Once
-// CampsiteRepository is on main we can load the whole campsite with getById.
-
+/**
+ * Opens the campsite details screen for one campsite.
+ * Start it with an Intent and put "campsiteId" and "campsiteName" as extras.
+ *
+ * Used for US 01.01.05 and US 01.01.06.
+ *
+ * Outstanding issues: only the id and name are passed in for now. Once
+ * CampsiteRepository is on main we can load the whole campsite with getById.
+ * This activity is not listed in AndroidManifest.xml yet, so it can't be
+ * started until it is added there.
+ */
 class CampsiteDetailsActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -28,7 +33,7 @@ class CampsiteDetailsActivity : ComponentActivity() {
 
         setContent {
             Project_halfwayTheme {
-                CampsiteDetailedCard(campsite)
+                CampsiteDetailedCard(campsite, isLotteryActive = true, onBackClick = { finish() }, onJoinClick = {})
             }
         }
     }

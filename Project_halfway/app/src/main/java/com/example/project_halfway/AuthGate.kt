@@ -7,6 +7,18 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import com.google.firebase.auth.FirebaseAuth
 
 
+/**
+ * Decides which screen to show, starting with WelcomeScreen:
+ * - Entrant: signs in with the device (EntrantAuthManager), then shows the
+ *   entrant home screen, which can open Browse Campsites
+ * - Campsite Owner: shows LoginScreenUI, then OwnerHomeScreenUI after login
+ *
+ * Used for US 01.09.01 and the owner login.
+ *
+ * Outstanding issues: which screen is open is kept in memory only, so the app
+ * goes back to the welcome screen when it is restarted. currentUser is tracked
+ * but not used to skip the welcome screen yet.
+ */
 @Composable
 fun AuthGate() {
 
@@ -93,6 +105,9 @@ fun AuthGate() {
         "ownerLogin" -> LoginScreenUI(
             onLoginSuccess = {
                 screen = "owner"
+            },
+            onBackClick = {
+                screen = "welcome"
             }
         )
 

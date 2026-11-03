@@ -40,6 +40,24 @@ import androidx.compose.ui.unit.sp
 import java.util.Locale
 
 // Detailed campsite view
+/**
+ * The full campsite details screen, styled like the mockup: a green "Details"
+ * header with a back arrow, then a card with the campsite's rating, name,
+ * location, description, services, price per night, a calendar and a
+ * Join lottery / Join waitlist button.
+ *
+ * Used for US 01.01.05 (view campsite details) and US 02.01.04 (owner views
+ * their campsite's details).
+ *
+ * Outstanding issues: the calendar is not built yet, and the Join button only
+ * calls onJoinClick; it is not connected to LotterySection (US 01.01.06), so
+ * entrants can't join a lottery from this screen yet.
+ *
+ * @param campsite the campsite to show
+ * @param isLotteryActive true to show "Join lottery", false to show "Join waitlist"
+ * @param onBackClick called when the back arrow is pressed
+ * @param onJoinClick called when the Join button is pressed
+ */
 @Composable
 fun CampsiteDetailedCard(
     campsite: CampsiteModel,
@@ -206,6 +224,13 @@ fun CampsiteDetailedCard(
 }
 
 
+/**
+ * Calendar on the campsite details screen showing the campsite's available dates.
+ *
+ * Outstanding issues: not built yet; it only prints a message for now.
+ *
+ * @param modifier layout options from the screen that shows it
+ */
 @Composable
 fun CampsiteCalendar( modifier: Modifier = Modifier) {
     print("CALANDER TO BE IMPLEMENTED")

@@ -5,12 +5,23 @@ import java.time.LocalDate
 
 /**
  * Provides search and filtering functionality for campsite listings.
+ * Works on a list already loaded from Firestore, so it has no Firebase code
+ * and can be unit tested (see CampSearchTest).
+ *
+ * Used for US 01.01.01 and US 01.01.02.
+ *
+ * Outstanding issues: filterByDates expects dates in YYYY-MM-DD form; a
+ * badly formatted date saved in Firestore would make it crash.
  */
 class CampSearch {
 
     /**
      * Searches campsites by name, campground name, or location.
      * US 01.01.01
+     *
+     * @param campsites the campsites to search
+     * @param query the text to look for (not case sensitive)
+     * @return the campsites whose name, campground or location contains the query
      */
     fun searchCampsites(
         campsites: List<CampsiteModel>,
@@ -40,6 +51,11 @@ class CampSearch {
      * Filters campsites by location and required guest capacity.
      * An empty location or null guest count means no filter.
      * US 01.01.02
+     *
+     * @param campsites the campsites to filter
+     * @param location text the campsite's location must contain, or "" for any
+     * @param guests how many people must fit, or null for any
+     * @return the campsites that match both filters
      */
     fun filterCampsites(
         campsites: List<CampsiteModel>,
@@ -65,7 +81,15 @@ class CampSearch {
         return results
     }
     /**
-     * Filtering by dates
+     * Filtering by dates: keeps the campsites that are available for the whole
+     * stay, i.e. one of their available date ranges covers check-in to check-out.
+     * US 01.01.02
+     *
+     * @param campsites the campsites to filter
+     * @param startDate check-in date
+     * @param endDate check-out date; must be after startDate
+     * @return the campsites available for the whole stay, or an empty list if
+     * endDate is not after startDate
      */
     fun filterByDates(
         campsites: List<CampsiteModel>,

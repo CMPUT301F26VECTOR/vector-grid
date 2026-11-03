@@ -14,6 +14,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
+/**
+ * The small campsite summary card: rating, name, location, available dates and
+ * a "days left in lottery" badge. Shared by the entrant's browse screen and
+ * the owner's Registered Campsites list.
+ *
+ * Outstanding issues: tapping the card does not open the detailed view yet,
+ * the available dates line is a placeholder, and the days-left badge always
+ * shows 6.
+ *
+ * @param campsite the campsite to show
+ */
 @Composable
 fun CampsiteDescriptionCard(campsite : CampsiteModel) {
     ElevatedCard(
