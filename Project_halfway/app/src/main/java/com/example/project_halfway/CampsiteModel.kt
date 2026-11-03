@@ -21,16 +21,16 @@ class CampsiteModel (
 
     // New fields. Each has a default so existing code that creates a
     // CampsiteModel with the original nine values still compiles.
-    val id: String = "",
-    val ownerId: String = "",
-    val type: String = "",
-    val services: List<String> = emptyList(),
-    
-    val pricePerNight: Double = 0.0,
-   // Available campsite dates, not lottery registration dates.
+    private val id: String = "",
+    private val ownerId: String = "",
+    private val type: String = "",
+    private val services: List<String> = emptyList(),
+    private val pricePerNight: Double = 0.0,
+
+    // Available campsite dates, not lottery registration dates.
     val availableDateRanges: List<Map<String, String>> = emptyList()
-   
-    
+
+
 ) {
     /** Returns the average rating given by users. */
     public fun getUserRating() : Double {
@@ -69,4 +69,26 @@ class CampsiteModel (
     public fun getLongitude() : Double {
         return longitude
     }
+
+    //Added extra getters for detailed view
+    public fun getId() : String {
+        return id
+    }
+
+    public fun getOwnerId() : String {
+        return ownerId
+    }
+
+    public fun getType() : String {
+        return type
+    }
+
+    public fun getServices() : List<String> {
+        return services
+    }
+
+    public fun getPricePerNight() : Double {
+        return pricePerNight
+    }
+
 }
