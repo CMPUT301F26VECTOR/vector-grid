@@ -16,6 +16,15 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 
 
+/**
+ * The first screen of the app: choose to continue as an Entrant or as a
+ * Campsite Owner. AuthGate decides what each button does.
+ *
+ * Outstanding issues: none known.
+ *
+ * @param onEntrantClick called when Entrant is pressed (signs in with the device)
+ * @param onOwnerClick called when Campsite Owner is pressed (opens the owner login)
+ */
 @Composable
 fun WelcomeScreen(
     onEntrantClick: () -> Unit,

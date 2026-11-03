@@ -7,6 +7,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
 // Set of Material typography styles to start with
+/**
+ * The app's text styles, used by Project_halfwayTheme. Only bodyLarge is
+ * changed; every other style is the Material 3 default (Android Studio template).
+ */
 val Typography = Typography(
     bodyLarge = TextStyle(
         fontFamily = FontFamily.Default,

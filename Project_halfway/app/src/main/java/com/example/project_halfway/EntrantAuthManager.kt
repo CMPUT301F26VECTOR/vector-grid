@@ -8,8 +8,28 @@ import com.google.firebase.firestore.Source
 import com.google.firebase.auth.FirebaseUser
 
 
+/**
+ * Signs entrants in with their device, with no username or password
+ * (Firebase anonymous sign-in), and makes sure each entrant has a profile
+ * in the Firestore "Users" collection with role "entrant".
+ *
+ * Used for US 01.09.01 (entrants are identified by their device).
+ *
+ * Outstanding issues: if the signed-in account's profile exists but its role
+ * is not "entrant", neither onSuccess nor onFailure is called, so the screen
+ * keeps showing "Loading...".
+ */
 object EntrantAuthManager {
 
+    /**
+     * Signs the entrant in with this device. Reuses the device's existing
+     * anonymous account if there is one, otherwise creates a new one, then
+     * checks or creates the entrant's profile.
+     *
+     * @param onSuccess called with the signed-in user once their profile is ready
+     * @param onFailure called with an error message if sign-in fails, or if a
+     * different (non-anonymous) account is already signed in
+     */
     fun signIn(
         onSuccess: (FirebaseUser) -> Unit,
         onFailure: (String) -> Unit
@@ -44,6 +64,7 @@ object EntrantAuthManager {
         }
     }
 
+    // Makes a new anonymous Firebase account for this device, then sets up its profile.
     private fun createAnonymousAccount(
         onSuccess: (FirebaseUser) -> Unit,
         onFailure: (String) -> Unit
@@ -64,6 +85,7 @@ object EntrantAuthManager {
                 )
             }
     }
+    // Loads the user's "Users" document; creates a blank entrant profile if it doesn't exist yet.
     private fun ensureProfile(
         user: FirebaseUser,
         onSuccess: (FirebaseUser) -> Unit,

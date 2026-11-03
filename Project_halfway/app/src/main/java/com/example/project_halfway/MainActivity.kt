@@ -19,6 +19,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.view.WindowCompat.enableEdgeToEdge
 import com.example.project_halfway.ui.theme.Project_halfwayTheme
 
+/**
+ * The screen the app opens on. It applies the app theme and shows AuthGate,
+ * which picks the welcome, entrant or owner screens.
+ *
+ * Outstanding issues: none known.
+ */
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,17 +40,21 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+/** Android Studio preview of CampsiteDescriptionCard with a sample campsite. */
 // For UI preview while building CampsiteSummaryCard
 @Preview(showBackground = true)
 @Composable
 fun CampsiteSummaryPreview() {
     val campsite = CampsiteModel("Site 56A", "B Provincial Park",
-        "Rockyview County, AB",1.0, 1.0, 5, 5.5, "A campsite.", "")
+        "Rockyview County, AB",1.0, 1.0, 5, 0.0,
+        "A campsite.", "")
+
     Project_halfwayTheme {
-        CampsiteDescriptionCard(campsite)
+        CampsiteDescriptionCard(campsite, {})
     }
 }
 
+/** Android Studio preview of CampsiteDetailedCard with a sample campsite. */
 // UI preview for CampsiteDetailedCard
 @Preview(showBackground = true)
 @Composable

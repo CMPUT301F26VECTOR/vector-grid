@@ -27,7 +27,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -40,18 +42,45 @@ import androidx.compose.ui.unit.sp
 import java.util.Locale
 
 // Detailed campsite view
+/**
+ * The full campsite details screen, styled like the mockup: a green "Details"
+ * header with a back arrow, then a card with the campsite's rating, name,
+ * location, description, services, price per night, a calendar and a
+ * Join lottery / Join waitlist button.
+ *
+ * Used for US 01.01.05 (view campsite details) and US 02.01.04 (owner views
+ * their campsite's details).
+ *
+ * The bottom of the card is an "action area". A screen can fill it with its
+ * own content: Browse puts LotterySection there so entrants can join the
+ * lottery (US 01.01.06), and the owner's screens put a View waitlist button
+ * there. With no actionArea, the card shows its Join button.
+ *
+ * Outstanding issues: the calendar is not built yet, and the Join button on
+ * its own only calls onJoinClick.
+ *
+ * @param campsite the campsite to show
+ * @param isLotteryActive true to show "Join lottery", false to show "Join waitlist"
+ * @param onBackClick called when the back arrow is pressed
+ * @param onJoinClick called when the Join button is pressed
+ * @param actionArea content to show instead of the Join button, or null to
+ * show the Join button
+ */
 @Composable
 fun CampsiteDetailedCard(
     campsite: CampsiteModel,
     isLotteryActive: Boolean, // True for "Join lottery", false for "Join waitlist"
     onBackClick: () -> Unit,
-    onJoinClick: () -> Unit
+    onJoinClick: () -> Unit,
+    actionArea: (@Composable () -> Unit)? = null
 ) {
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xff566C11)),
+            .background(Color(0xff566C11))
+            // scrolls, so a long description or the lottery section never gets cut off
+            .verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         // Top Header Bar
@@ -182,23 +211,27 @@ fun CampsiteDetailedCard(
 
                 Spacer(modifier = Modifier.height(20.dp))
 
-                // Action Button
-                Button(
-                    onClick = onJoinClick,
-                    modifier = Modifier
-                        .width(200.dp)
-                        .height(60.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xff566C11)
-                    )
-                ) {
-                    Text(
-                        text = if (isLotteryActive) "Join lottery" else "Join waitlist",
-                        fontFamily = FontFamily.SansSerif,
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
-                    )
+                // Action area: the screen's own content if it gave one, otherwise the Join button
+                if (actionArea != null) {
+                    actionArea()
+                } else {
+                    Button(
+                        onClick = onJoinClick,
+                        modifier = Modifier
+                            .width(200.dp)
+                            .height(60.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xff566C11)
+                        )
+                    ) {
+                        Text(
+                            text = if (isLotteryActive) "Join lottery" else "Join waitlist",
+                            fontFamily = FontFamily.SansSerif,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+                    }
                 }
             }
         }
@@ -206,6 +239,13 @@ fun CampsiteDetailedCard(
 }
 
 
+/**
+ * Calendar on the campsite details screen showing the campsite's available dates.
+ *
+ * Outstanding issues: not built yet; it only prints a message for now.
+ *
+ * @param modifier layout options from the screen that shows it
+ */
 @Composable
 fun CampsiteCalendar( modifier: Modifier = Modifier) {
     print("CALANDER TO BE IMPLEMENTED")
