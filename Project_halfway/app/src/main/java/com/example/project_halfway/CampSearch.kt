@@ -106,7 +106,7 @@ class CampSearch {
 
         for (campsite in campsites) {
 
-            for (range in campsite.availableDateRanges) {
+            for (range in campsite.getAvailableDateRanges()) {
                 val start = range["start"]
                 val end = range["end"]
 
