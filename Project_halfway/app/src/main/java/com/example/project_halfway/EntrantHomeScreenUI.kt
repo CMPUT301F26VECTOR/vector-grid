@@ -51,7 +51,13 @@ private val HomeGreen = Color(0xFF526B0D)
  *
  * Shows a welcome message, profile icon and Browse Campsites card.
  * Calls onBrowseClick when the user selects the card.
+ * The entrant can also edit their name, email and phone number, or delete
+ * their profile (US 01.07.03).
  *
+ * Outstanding issues: the profile icon does not open the profile screen yet.
+ *
+ * @param onExit called when SIGNOUT is pressed
+ * @param onBrowseClick called when the Browse Campsites card is pressed
  */
 @Composable
 fun EntrantHomeScreenUI(

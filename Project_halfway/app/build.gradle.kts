@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.dokka)
     id("com.google.gms.google-services")
 }
 
@@ -59,4 +60,13 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
     implementation("androidx.media3:media3-common:1.11.1")
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
+}
+// Dokka: builds HTML documentation from the KDoc comments in the code.
+// Run  ./gradlew :app:dokkaGenerate  and open app/build/dokka/html/index.html
+dokka {
+    moduleName.set("Project_halfway")
+    dokkaSourceSets.configureEach {
+        // Warn about public classes and functions that have no KDoc comment yet
+        reportUndocumented.set(true)
+    }
 }

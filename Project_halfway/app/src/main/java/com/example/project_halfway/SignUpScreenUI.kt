@@ -214,6 +214,18 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
+/**
+ * The campsite owner sign-up screen: first name, last name, email and
+ * password. Creates the owner's account through FirebaseSecurity.ownerAuth
+ * and saves an Owner profile (role "owner") in the Firestore "Users"
+ * collection.
+ *
+ * Outstanding issues: the boxes are not checked before sending (e.g. blank
+ * names), and if saving the profile to Firestore fails no message is shown.
+ * The old commented-out version at the top of the file could be removed.
+ *
+ * @param onSignUpSuccess called once the account and profile are saved
+ */
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun SignUpScreen (

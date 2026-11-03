@@ -7,6 +7,9 @@ package com.example.project_halfway
  * Saving and loading is done in CampsiteRepository.
  *
  * Outstanding issues: image upload is not built yet.
+ *
+ * @property availableDateRanges the dates the campsite can be booked, as maps
+ * with "start" and "end" in YYYY-MM-DD form (not lottery registration dates)
  */
 class CampsiteModel (
     private val campsiteName : String,
@@ -28,9 +31,10 @@ class CampsiteModel (
     private val pricePerNight: Double = 0.0,
 
     // Available campsite dates, not lottery registration dates.
-    val availableDateRanges: List<Map<String, String>> = emptyList()
+    val availableDateRanges: List<Map<String, String>> = emptyList(),
 
-
+    // Short labels the owner picks, e.g. "Lakeside", "Pet friendly" (US 02.01.02).
+    private val tags: List<String> = emptyList()
 ) {
     /** Returns the average rating given by users. */
     public fun getUserRating() : Double {
@@ -71,24 +75,34 @@ class CampsiteModel (
     }
 
     //Added extra getters for detailed view
+    /** Returns the campsite's Firestore document id, or "" if it hasn't been saved yet. */
     public fun getId() : String {
         return id
     }
 
+    /** Returns the user id of the owner who listed the campsite. */
     public fun getOwnerId() : String {
         return ownerId
     }
 
+    /** Returns the kind of site, for example "Tent site". */
     public fun getType() : String {
         return type
     }
 
+    /** Returns the services the site offers, for example "Power" or "Non-potable water". */
     public fun getServices() : List<String> {
         return services
     }
 
+    /** Returns the price per night in dollars. It is 0.0 if the owner didn't set one. */
     public fun getPricePerNight() : Double {
         return pricePerNight
+    }
+
+    /** Returns the owner's tags for this campsite, e.g. "Lakeside". Empty if none. */
+    public fun getTags() : List<String> {
+        return tags
     }
 
 }

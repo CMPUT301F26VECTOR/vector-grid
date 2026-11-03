@@ -39,6 +39,10 @@ private val BrowseGreen = Color(0xFF526B0D)
  *
  * Campsite data is retrieved from Firestore.
  *
+ * Outstanding issues: tapping a campsite card does not open its details yet,
+ * and if loading from Firestore fails the screen keeps showing the loading
+ * message (CampsiteRepository.getAll does not report failures).
+ *
  * @param onBackClick Returns to Entrant Home.
  * @param onFilterClick Optional callback when filters are opened.
  */
@@ -249,6 +253,14 @@ fun BrowseCampsitesScreenUI(
  * Allows entrants to select location, guest capacity and a check-in/check-out date range.
  *
  * Filter values are returned to Browse Campsites.
+ *
+ * @param initialLocation the location filter already chosen, shown in the box
+ * @param initialGuests the guest count already chosen, as text
+ * @param initialCheckIn the check-in date already chosen, or null
+ * @param initialCheckOut the check-out date already chosen, or null
+ * @param onBackClick called when the back arrow is pressed
+ * @param onApplyFilters called with location, guests, check-in and check-out
+ * when the filters are applied
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

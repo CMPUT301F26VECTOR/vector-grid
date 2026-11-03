@@ -31,6 +31,11 @@ import androidx.compose.ui.unit.dp
  * Loads the active lottery for a campsite and lets the signed in entrant
  * join or leave its waiting list.
  *
+ * Used for US 01.01.06, US 01.02.01 and US 01.02.02.
+ *
+ * Outstanding issues: the campsite details screen (CampsiteDetailedCard) does
+ * not show this section right now, so entrants can't reach it.
+ *
  * @param campsiteId id of the campsite being looked at
  */
 @Composable
@@ -156,6 +161,7 @@ fun LotteryButton(
     }
 }
 
+/** Android Studio preview of LotteryButton for an entrant who hasn't joined yet. */
 @Preview(showBackground = true)
 @Composable
 fun LotteryButtonPreview() {

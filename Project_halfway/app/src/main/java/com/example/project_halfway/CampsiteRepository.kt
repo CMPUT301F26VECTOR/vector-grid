@@ -1,28 +1,48 @@
 package com.example.project_halfway
 
 
-// Saves and loads campsites in the Firestore "campsites" collection.
-// Uses the shared connection in FirebaseSecurity.
-
-// Outstanding issues: no delete or update yet; errors are only printed;
-// getById gives no answer if the id doesn't exist; not tested against the
-//real database
-
+/**
+ * Saves and loads campsites in the Firestore "campsites" collection.
+ * Uses the shared connection in FirebaseSecurity.
+ *
+ * Used for US 02.01.01 (register a campsite), US 02.03.01 (owner's campsites)
+ * and the entrant browse and search stories.
+ *
+ * Outstanding issues: no delete or update yet; errors are only printed;
+ * getById gives no answer if the id doesn't exist; not tested against the
+ * real database.
+ */
 object CampsiteRepository {
 
     // The "campsites" collection in Firestore (like a drawer of campsite folders).
     private fun campsites() = FirebaseSecurity.db.collection("campsites")
 
-    // Save one campsite. A campsite with no id gets a new one from Firestore.
-    fun save(campsite: CampsiteModel) {
-        val document = if (campsite.id == "") campsites().document() else campsites().document(campsite.id)
+    /**
+     * Saves one campsite. A campsite with no id gets a new one from Firestore.
+     *
+     * @param campsite the campsite to save
+     * @param onDone gets true once Firestore has saved it, or false if it failed.
+     * It is optional, so older calls like save(campsite) still work.
+     */
+    fun save(campsite: CampsiteModel, onDone: (Boolean) -> Unit = {}) {
+        val document = if (campsite.getId() == "") campsites().document() else campsites().document(campsite.getId())
 
         document.set(toMap(campsite))
-            .addOnSuccessListener { println("Saved campsite ${document.id}") }
-            .addOnFailureListener { println("Save failed: ${it.message}") }
+            .addOnSuccessListener {
+                println("Saved campsite ${document.id}")
+                onDone(true)
+            }
+            .addOnFailureListener {
+                println("Save failed: ${it.message}")
+                onDone(false)
+            }
     }
 
-    // Load every campsite. Firestore answers later, so we pass in what to do with the list.
+    /**
+     * Loads every campsite. Firestore answers later, so we pass in what to do with the list.
+     *
+     * @param onResult gets every campsite; not called if loading fails
+     */
     fun getAll(onResult: (List<CampsiteModel>) -> Unit) {
         campsites().get()
             .addOnSuccessListener { result ->
@@ -38,7 +58,12 @@ object CampsiteRepository {
             .addOnFailureListener { println("Load failed: ${it.message}") }
     }
 
-    // Load only the campsites that belong to one owner (for "my campsites").
+    /**
+     * Loads only the campsites that belong to one owner (for "my campsites").
+     *
+     * @param ownerId the owner's user id
+     * @param onResult gets that owner's campsites; not called if loading fails
+     */
     fun getByOwner(ownerId: String, onResult: (List<CampsiteModel>) -> Unit) {
         campsites().whereEqualTo("ownerId", ownerId).get()
             .addOnSuccessListener { result ->
@@ -54,7 +79,12 @@ object CampsiteRepository {
             .addOnFailureListener { println("Load failed: ${it.message}") }
     }
 
-    // Load one campsite by its id.
+    /**
+     * Loads one campsite by its id.
+     *
+     * @param id the campsite's Firestore document id
+     * @param onResult gets the campsite; not called if it doesn't exist or loading fails
+     */
     fun getById(id: String, onResult: (CampsiteModel) -> Unit) {
         campsites().document(id).get()
             .addOnSuccessListener { document ->
@@ -68,28 +98,41 @@ object CampsiteRepository {
             .addOnFailureListener { println("Load failed: ${it.message}") }
     }
 
-    // Turn a campsite into name -> value pairs, which is how Firestore stores it.
+    /**
+     * Turns a campsite into name -> value pairs, which is how Firestore stores it.
+     * The id is not included; it is the document's name.
+     *
+     * @param c the campsite
+     * @return the campsite's fields as a map
+     */
     fun toMap(c: CampsiteModel): Map<String, Any> {
         return mapOf(
-            "ownerId" to c.ownerId,
+            "ownerId" to c.getOwnerId(),
             "campsiteName" to c.getCampsiteName(),
             "campgroundName" to c.getCampgroundName(),
             "location" to c.getCampsiteLocation(),
             "latitude" to c.getLatitude(),
             "longitude" to c.getLongitude(),
             "occupancy" to c.getOccupancy(),
-            "type" to c.type,
-            "services" to c.services,
-            "pricePerNight" to c.pricePerNight,
+            "type" to c.getType(),
+            "services" to c.getServices(),
+            "pricePerNight" to c.getPricePerNight(),
             "userRating" to c.getUserRating(),
             "description" to c.getDescription(),
             "imageUrl" to c.getImageUrl(),
-            "availableDateRanges" to c.availableDateRanges
-
+            "availableDateRanges" to c.availableDateRanges,
+            "tags" to c.getTags()
         )
     }
 
-    // Build a campsite back from name -> value pairs. The id is the document's name.
+    /**
+     * Builds a campsite back from name -> value pairs. Missing values become
+     * blanks or zeros.
+     *
+     * @param id the Firestore document's name, used as the campsite id
+     * @param m the document's data
+     * @return the campsite
+     */
     fun fromMap(id: String, m: Map<String, Any>): CampsiteModel {
         return CampsiteModel(
             campsiteName = text(m, "campsiteName"),
@@ -106,7 +149,8 @@ object CampsiteRepository {
             type = text(m, "type"),
             services = textList(m, "services"),
             pricePerNight = number(m, "pricePerNight"),
-            availableDateRanges = dateRanges(m, "availableDateRanges")
+            availableDateRanges = dateRanges(m, "availableDateRanges"),
+            tags = textList(m, "tags")
         )
     }
 

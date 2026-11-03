@@ -126,6 +126,15 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import com.example.project_halfway.ui.theme.Project_halfwayTheme
 
+/**
+ * Screen opened by "Create Account" on the owner login screen. It shows
+ * SignUpScreen, and once the owner's account is created it shows
+ * OwnerHomeScreenUI. Signing out goes back to MainActivity.
+ *
+ * Outstanding issues: despite its name, this is the campsite owner sign-up
+ * flow, not the entrant home screen (the entrant home screen is shown by
+ * AuthGate). The old commented-out versions above could be removed.
+ */
 class EntrantHomeScreenClass : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
