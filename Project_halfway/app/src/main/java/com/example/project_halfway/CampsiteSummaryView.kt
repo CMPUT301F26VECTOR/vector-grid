@@ -51,6 +51,12 @@ fun CampsiteDescriptionCard(campsite : CampsiteModel, onClick: () -> Unit = {}) 
             )
 
             Text(
+                campsite.getOccupancy().toString() + " guests",
+                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                style = MaterialTheme.typography.bodyLarge
+            )
+
+            Text(
                 "IMPLEMENT GETTING AVAILABLE DATES",
                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                 style = MaterialTheme.typography.bodyLarge

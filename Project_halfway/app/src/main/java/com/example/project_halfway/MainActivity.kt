@@ -46,9 +46,11 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun CampsiteSummaryPreview() {
     val campsite = CampsiteModel("Site 56A", "B Provincial Park",
-        "Rockyview County, AB",1.0, 1.0, 5, 5.5, "A campsite.", "")
+        "Rockyview County, AB",1.0, 1.0, 5, 0.0,
+        "A campsite.", "")
+
     Project_halfwayTheme {
-        CampsiteDescriptionCard(campsite)
+        CampsiteDescriptionCard(campsite, {})
     }
 }
 
