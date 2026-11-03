@@ -1,6 +1,5 @@
 package com.example.project_halfway
 
-
 /**
  * Model for one campsite listing.
  * Holds the campsite's data, read through the getter functions.
@@ -110,14 +109,8 @@ class CampsiteModel (
      * booked. This depends on the map keys in availableDateRanges being called "start"
      * and "end". Returns "No available dates found." if list is empty. */
     public fun getAvailableDateRangesString() : String {
-        var dateRangesString = "No available dates found."
-        if (availableDateRanges.isEmpty()) return dateRangesString
-        for (i in availableDateRanges.indices) {
-            dateRangesString += availableDateRanges[i]["start"] + " - " +
-                    availableDateRanges[i]["end"] + ", "
-        }
-
-        return dateRangesString
+        if (availableDateRanges.isEmpty()) return "No available dates found."
+        return availableDateRanges.joinToString(", ") { "${it["start"]} - ${it["end"]}" }
     }
 
     /** Returns availableDateRanges attribute. */
