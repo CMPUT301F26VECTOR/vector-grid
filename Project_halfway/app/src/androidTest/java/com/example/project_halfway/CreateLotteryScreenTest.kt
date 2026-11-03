@@ -117,6 +117,7 @@ class CreateLotteryScreenTest {
             .assertTextEquals("Please pick a campsite first.")
         assertEquals(false, called)
     }
+
     @Test
     fun title_showsTheCampsiteName() {
         composeRule.setContent {
