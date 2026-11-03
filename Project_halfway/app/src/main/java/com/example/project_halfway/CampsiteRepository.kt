@@ -128,7 +128,7 @@ object CampsiteRepository {
             "userRating" to c.getUserRating(),
             "description" to c.getDescription(),
             "imageUrl" to c.getImageUrl(),
-            "availableDateRanges" to c.availableDateRanges,
+            "availableDateRanges" to c.getAvailableDateRanges(),
             "tags" to c.getTags()
         )
     }

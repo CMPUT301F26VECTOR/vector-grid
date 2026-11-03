@@ -1,11 +1,8 @@
 package com.example.project_halfway
 
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.MaterialTheme
@@ -57,7 +54,7 @@ fun CampsiteDescriptionCard(campsite : CampsiteModel, onClick: () -> Unit = {}) 
             )
 
             Text(
-                "IMPLEMENT GETTING AVAILABLE DATES",
+                campsite.getAvailableDateRangesString(),
                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                 style = MaterialTheme.typography.bodyLarge
             )
