@@ -83,7 +83,7 @@ class CampsiteRepositoryTest {
         val copy = CampsiteRepository.fromMap("camp_003", CampsiteRepository.toMap(original))
 
         assertEquals(listOf("Lakeside", "Pet friendly"), copy.getTags())
-        assertEquals("2027-06-01", copy.availableDateRanges[0]["start"])
-        assertEquals("2027-06-15", copy.availableDateRanges[0]["end"])
+        assertEquals("2027-06-01", copy.getAvailableDateRanges()[0]["start"])
+        assertEquals("2027-06-15", copy.getAvailableDateRanges()[0]["end"])
     }
 }
