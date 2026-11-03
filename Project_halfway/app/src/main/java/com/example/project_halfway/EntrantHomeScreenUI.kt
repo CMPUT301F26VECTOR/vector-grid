@@ -77,6 +77,7 @@ fun EntrantHomeScreenUI(
     var isediting by remember {mutableStateOf(false)}
     var openDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
+    var viewPolicyGuidelines by remember {mutableStateOf(false)}
 
     val uid = FirebaseSecurity.auth.currentUser?.uid
     if (openDialog){
@@ -160,6 +161,10 @@ fun EntrantHomeScreenUI(
         }
     }
 
+    if (viewPolicyGuidelines){
+        AppPolicyandGuidelines (onBack={viewPolicyGuidelines = false})
+    }
+    else{
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -169,7 +174,7 @@ fun EntrantHomeScreenUI(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
 
-
+        Spacer(modifier  = Modifier.height(20.dp))
         // Welcome message and profile icon
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -177,7 +182,7 @@ fun EntrantHomeScreenUI(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Welcome back!",
+                text = "Welcome!",
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color.White
@@ -352,6 +357,12 @@ fun EntrantHomeScreenUI(
             }
 
         }
+        Spacer(modifier = Modifier.height(12.dp) )
+        Button(onClick = {viewPolicyGuidelines = true},
+            modifier = Modifier.fillMaxWidth()){
+            Text(text = "App Policy and Guidelines",
+                fontSize = 18.sp)
+        }
 
         Spacer(modifier = Modifier.height(16.dp))
         // Card for opening My Reservations & Entries (Waitlisted tab, US 01.02.01, 01.02.02)
@@ -419,6 +430,7 @@ fun EntrantHomeScreenUI(
 
 
 
+    }
     }
 }
 
