@@ -128,8 +128,8 @@ import com.example.project_halfway.ui.theme.Project_halfwayTheme
 
 /**
  * Screen opened by "Create Account" on the owner login screen. It shows
- * SignUpScreen, and once the owner's account is created it shows
- * OwnerHomeScreenUI. Signing out goes back to MainActivity.
+ * SignUpScreen, and once the owner's account is created it shows the
+ * owner's screens (OwnerScreens). Signing out goes back to MainActivity.
  *
  * Outstanding issues: despite its name, this is the campsite owner sign-up
  * flow, not the entrant home screen (the entrant home screen is shown by
@@ -153,7 +153,9 @@ class EntrantHomeScreenClass : ComponentActivity() {
 //
 //                }
                 if (showOwnerHome) {
-                    OwnerHomeScreenUI(
+                    OwnerScreens(
+                        // the new owner's id, so their campsites are saved and loaded under it
+                        ownerId = FirebaseSecurity.ownerAuth.currentUser?.uid ?: "",
                         onSignOut = {
                             FirebaseSecurity.ownerAuth.signOut()
 
