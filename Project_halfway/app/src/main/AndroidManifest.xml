@@ -26,6 +26,14 @@
 
         <activity android:name=".EntrantHomeScreenClass"
             android:exported="false"/>
+
+        <!-- Parneet: entrant profile page (US 01.07.03) -->
+        <activity android:name=".EntrantProfileActivity"
+            android:exported="false"/>
+
+        <!-- Parneet: My Reservations & Entries, Waitlisted tab (US 01.02.01, 01.02.02) -->
+        <activity android:name=".MyEntriesActivity"
+            android:exported="false"/>
     </application>
 
 </manifest>
