@@ -1,12 +1,12 @@
-# Rebuilds the "Code Documentation" pages in the wiki from the KDoc comments in
+# Rebuilds the single "Code Documentation" wiki page from the KDoc comments in
 # the Kotlin source (the same comments Dokka uses), so the wiki always matches
 # the code on main. GitHub wikis can only show Markdown, not Dokka's HTML site,
-# so .github/scripts/kdoc_to_wiki.py writes one Markdown page per source file.
-# The full Dokka site is published separately by dokka-pages.yml.
+# so .github/scripts/kdoc_to_wiki.py writes the whole documentation as one
+# organised Markdown page. The full Dokka site is published by dokka-pages.yml.
 #
 # Runs on every push to main that changes app code, or by hand from the Actions tab.
-# Only the generated pages (Code-Documentation.md and Docs-*.md) are touched;
-# every other wiki page is left alone.
+# Only Code-Documentation.md is written (and any old Docs-*.md pages from an
+# earlier version are deleted); every other wiki page is left alone.
 name: Update wiki code documentation
 
 on:
@@ -40,7 +40,7 @@ jobs:
           repository: ${{ github.repository }}.wiki
           path: wiki
 
-      - name: Generate the pages from KDoc
+      - name: Generate the page from KDoc
         run: >
           python3 code/.github/scripts/kdoc_to_wiki.py
           code/Project_halfway/app/src/main/java
@@ -48,7 +48,7 @@ jobs:
           "${{ github.repository }}"
           main
 
-      - name: Save the pages to the wiki
+      - name: Save the page to the wiki
         working-directory: wiki
         run: |
           git add -A -- 'Code-Documentation.md' 'Docs-*.md'

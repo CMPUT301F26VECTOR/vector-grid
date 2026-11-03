@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
 """
-Turns the KDoc comments in the app's Kotlin source into GitHub wiki pages.
+Turns the KDoc comments in the app's Kotlin source into ONE GitHub wiki page,
+Code-Documentation.md.
 
 GitHub wikis only show Markdown, and Dokka 2 only makes HTML, so this reads the
-same /** ... */ comments Dokka reads and writes:
-  - Code-Documentation.md   index of every source file with a one-line summary
-  - Docs-<File>.md          one page per Kotlin file: each public class, object,
-                            function and property with its signature and KDoc
+same /** ... */ comments Dokka reads. The page has a contents list, then the
+source files grouped into sections (Models and logic, Firebase and data access,
+Screens and UI, Theme). Each file shows a one-line summary, and its classes,
+functions and properties (signature + KDoc) sit in a collapsible block so the
+page stays short. Like Dokka's defaults, private and internal declarations are
+left out.
 
-Like Dokka's default settings, private and internal declarations are left out.
 Run by .github/workflows/wiki-code-docs.yml on every push to main.
 
 Usage: kdoc_to_wiki.py <kotlin source root> <wiki folder> <owner/repo> [branch]
@@ -18,7 +20,7 @@ import re
 import sys
 
 DOKKA_SITE = "https://cmput301f26vector.github.io/vector-grid/"
-PAGE_PREFIX = "Docs-"
+OLD_PAGE_PREFIX = "Docs-"  # per-file pages made by an earlier version; removed
 INDEX_PAGE = "Code-Documentation"
 
 DECL_RE = re.compile(
@@ -194,24 +196,39 @@ def render_entry(out, level, kind, name, sig, body):
         out.append(f"**{labels[tag]}**")
         out.append("")
         for _, arg, text in items:
-            if arg:
-                out.append(f"- `{arg}`: {md_text(text)}")
-            else:
-                out.append(f"- {md_text(text)}")
+            out.append(f"- `{arg}`: {md_text(text)}" if arg else f"- {md_text(text)}")
         out.append("")
 
 
-def page_name(rel_path):
-    stem = os.path.splitext(rel_path)[0]
-    parts = stem.replace("\\", "/").split("/")
-    keep = parts[-1] if len(parts) == 1 else "-".join(parts[-2:]) if parts[-2] == "theme" else parts[-1]
-    return PAGE_PREFIX + re.sub(r"[^\w-]+", "-", keep).strip("-")
+SECTIONS = [
+    ("Models and logic", "Classes that hold the app's data and rules. They have no screens."),
+    ("Firebase and data access", "Code that signs users in and reads or writes Firestore."),
+    ("Screens and UI", "Jetpack Compose screens, cards and the activities that show them."),
+    ("Theme", "Colours, text styles and the Material theme."),
+]
 
 
-def document_file(path, rel, repo, branch):
+def section_of(rel):
+    stem = os.path.splitext(os.path.basename(rel))[0]
+    if "/theme/" in "/" + rel.replace("\\", "/"):
+        return "Theme"
+    if re.search(r"Screen|UI|View|Activity|Gate", stem):
+        return "Screens and UI"
+    if re.search(r"Repository|Firebase|Auth", stem):
+        return "Firebase and data access"
+    return "Models and logic"
+
+
+def anchor(heading):
+    """The link target GitHub gives a heading."""
+    a = heading.strip().lower()
+    a = re.sub(r"[^\w\- ]", "", a)
+    return a.replace(" ", "-")
+
+
+def parse_file(path):
     with open(path, encoding="utf-8") as f:
         lines = f.read().splitlines()
-
     entries = []  # (indent, kind, name, sig, body)
     i = 0
     while i < len(lines):
@@ -237,29 +254,23 @@ def document_file(path, rel, repo, branch):
             entries.append((indent, kind, name_of(kind, rest), sig, body))
         else:
             i += 1
+    return entries
 
-    url = f"https://github.com/{repo}/blob/{branch}/Project_halfway/app/src/main/java/{rel}"
-    file_name = os.path.basename(rel)
-    out = [f"# {file_name}", "",
-           f"> Generated automatically from the KDoc comments in [`{file_name}`]({url}) "
-           f"every time `main` changes. To change this page, edit the comments in the code. "
-           f"Full Dokka site: {DOKKA_SITE}", ""]
 
-    summary = ""
-    if not entries:
-        out.append("_This file has no KDoc comments on public declarations._")
-    for indent, kind, name, sig, body in entries:
-        if not summary:
-            desc, _ = parse_tags(body)
-            text = " ".join(l.strip() for l in desc if l.strip())
-            summary = re.split(r"(?<=[.!?])\s", text, maxsplit=1)[0] if text else ""
-        if kind == "file":
-            desc, _ = parse_tags(body)
-            out.extend(md_lines(desc))
-            out.append("")
-            continue
-        render_entry(out, 2 if indent == 0 else 3, kind, name, sig, body)
-    return file_name, "\n".join(out).rstrip() + "\n", md_text(summary)
+def summary_of(entries):
+    for _, _, _, _, body in entries:
+        desc, _ = parse_tags(body)
+        first = []  # first paragraph only, stopping before any list
+        for l in desc:
+            if not l.strip() or l.strip().startswith("- "):
+                if first:
+                    break
+                continue
+            first.append(l.strip())
+        text = " ".join(first)
+        if text:
+            return md_text(re.split(r"(?<=[.!?])\s", text, maxsplit=1)[0].rstrip(":"))
+    return "_No KDoc yet._"
 
 
 def main():
@@ -276,35 +287,65 @@ def main():
                 files.append((full, os.path.relpath(full, src)))
     files.sort(key=lambda f: os.path.basename(f[1]).lower())
 
-    # remove pages for files that no longer exist, then write fresh ones
-    for old in os.listdir(wiki):
-        if old.startswith(PAGE_PREFIX) and old.endswith(".md"):
-            os.remove(os.path.join(wiki, old))
-
-    rows = []
+    grouped = {name: [] for name, _ in SECTIONS}
     for full, rel in files:
-        file_name, text, summary = document_file(full, rel, repo, branch)
-        page = page_name(rel)
-        with open(os.path.join(wiki, page + ".md"), "w", encoding="utf-8") as f:
-            f.write(text)
-        rows.append(f"| [{file_name}]({page}) | {summary.replace('|', '/')} |")
+        entries = parse_file(full)
+        grouped[section_of(rel)].append((rel, entries))
 
-    index = [
+    total = sum(1 for g in grouped.values() for _, es in g for e in es if e[1] != "file")
+    out = [
         "# Code Documentation", "",
-        "Documentation for every Kotlin source file in the app, taken from the KDoc "
-        "comments in the code. These pages are regenerated automatically on every push "
-        "to `main` by `.github/workflows/wiki-code-docs.yml`, so they always match the "
-        "current code. To change them, edit the comments in the code, not these pages.", "",
+        f"Documentation for all {len(files)} Kotlin source files in the app "
+        f"({total} documented classes, functions and properties), taken from the KDoc "
+        "comments in the code. This page is rebuilt automatically on every push to `main` "
+        "by `.github/workflows/wiki-code-docs.yml`, so it always matches the current code. "
+        "To change it, edit the comments in the code, not this page.", "",
         f"The same documentation as a full Dokka website: **{DOKKA_SITE}**", "",
-        "To build the Dokka site locally: `cd Project_halfway && ./gradlew :app:dokkaGenerate`, "
-        "then open `app/build/dokka/html/index.html`.", "",
-        "| File | What it is |",
-        "|---|---|",
-        *rows,
+        "## Contents", "",
     ]
+    for name, _ in SECTIONS:
+        if not grouped[name]:
+            continue
+        out.append(f"- [{name}](#{anchor(name)})")
+        for rel, entries in grouped[name]:
+            fname = os.path.basename(rel)
+            out.append(f"  - [{fname}](#{anchor(fname)}): {summary_of(entries)}")
+    out.append("")
+
+    for name, blurb in SECTIONS:
+        if not grouped[name]:
+            continue
+        out += ["---", "", f"## {name}", "", f"_{blurb}_", ""]
+        for rel, entries in grouped[name]:
+            fname = os.path.basename(rel)
+            url = f"https://github.com/{repo}/blob/{branch}/Project_halfway/app/src/main/java/{rel}"
+            decls = [e for e in entries if e[1] != "file"]
+            out += [f"### {fname}", "", f"{summary_of(entries)} ([source]({url}))", ""]
+            if not entries:
+                continue
+            out += ["<details>",
+                    f"<summary>Show details ({len(decls)} documented declaration"
+                    f"{'' if len(decls) == 1 else 's'})</summary>", ""]
+            for indent, kind, dname, sig, body in entries:
+                if kind == "file":
+                    desc, _ = parse_tags(body)
+                    out += md_lines(desc) + [""]
+                    continue
+                render_entry(out, 4 if indent == 0 else 5, kind, dname, sig, body)
+            out += ["</details>", ""]
+        out += [f"[Back to contents](#contents)", ""]
+
     with open(os.path.join(wiki, INDEX_PAGE + ".md"), "w", encoding="utf-8") as f:
-        f.write("\n".join(index) + "\n")
-    print(f"Wrote {len(rows)} file pages and {INDEX_PAGE}.md")
+        f.write("\n".join(out).rstrip() + "\n")
+
+    # remove the per-file pages an earlier version of this script made
+    removed = 0
+    for old in os.listdir(wiki):
+        if old.startswith(OLD_PAGE_PREFIX) and old.endswith(".md"):
+            os.remove(os.path.join(wiki, old))
+            removed += 1
+    print(f"Wrote {INDEX_PAGE}.md ({len(files)} files, {total} declarations); "
+          f"removed {removed} old per-file pages")
 
 
 if __name__ == "__main__":
