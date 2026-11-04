@@ -39,14 +39,18 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.sp
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import java.util.Locale
 
 // Detailed campsite view
 /**
  * The full campsite details screen, styled like the mockup: a green "Details"
  * header with a back arrow, then a card with the campsite's rating, name,
- * location, description, services, price per night, a calendar and a
- * Join lottery / Join waitlist button.
+ * location, a Google Map with the campsite's pin (with Directions and Open in
+ * Google Maps buttons), description, services, price per night, a calendar
+ * and a Join lottery / Join waitlist button.
  *
  * Used for US 01.01.05 (view campsite details) and US 02.01.04 (owner views
  * their campsite's details).
@@ -145,6 +149,11 @@ fun CampsiteDetailedCard(
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth()
                 )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Map of the campsite's pin, with buttons that open Google Maps
+                CampsiteMapSection(campsite)
 
                 Spacer(modifier = Modifier.height(12.dp))
 
@@ -249,4 +258,45 @@ fun CampsiteDetailedCard(
 @Composable
 fun CampsiteCalendar( modifier: Modifier = Modifier) {
     print("CALANDER TO BE IMPLEMENTED")
+}
+
+/**
+ * The map part of the details card: a small Google Map with the campsite's pin, and
+ * Directions and Open in Google Maps buttons (US 01.01.05, 02.01.04). A campsite
+ * with no map location shows "No location yet" and no buttons.
+ *
+ * @param campsite the campsite whose location to show
+ */
+@Composable
+fun CampsiteMapSection(campsite: CampsiteModel) {
+    val context = LocalContext.current
+    val position = campsite.mapPosition()
+
+    CampsiteMapPreview(
+        position = position,
+        modifier = Modifier.fillMaxWidth().height(180.dp),
+        onClick = { position?.let { GoogleMapsLinks.openPin(context, it) } }
+    )
+
+    if (position != null) {
+        Spacer(modifier = Modifier.height(8.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
+        ) {
+            Button(
+                onClick = { GoogleMapsLinks.openDirections(context, position) },
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xff566C11)),
+                modifier = Modifier.testTag("directions_button")
+            ) {
+                Text("Directions")
+            }
+            OutlinedButton(
+                onClick = { GoogleMapsLinks.openPin(context, position) },
+                modifier = Modifier.testTag("open_in_maps_button")
+            ) {
+                Text("Open in Google Maps", color = Color(0xff566C11))
+            }
+        }
+    }
 }

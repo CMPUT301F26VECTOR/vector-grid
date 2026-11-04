@@ -29,7 +29,8 @@ import androidx.compose.ui.unit.dp
 /**
  * Shows whichever campsite owner screen is open and moves between them: the
  * owner home, Register Campsite (US 02.01.01, US 02.01.02), My Campsites
- * (US 02.03.01), one campsite's details (US 02.01.04), its lottery's
+ * (US 02.03.01), one campsite's details (US 02.01.04), changing its map
+ * location with LocationPickerDialog (US 02.01.03), its lottery's
  * waitlist and winners (US 02.05.01, US 02.09.01) and Create Lottery
  * (US 02.04.01, US 02.04.03, US 02.04.04, US 02.04.05, US 02.04.07).
  *
@@ -55,6 +56,12 @@ fun OwnerScreens(ownerId: String, onSignOut: () -> Unit) {
     // The campsite the owner tapped in My Campsites (used by "details", "waitlist"
     // and "createLottery")
     var selectedCampsite by remember { mutableStateOf<CampsiteModel?>(null) }
+
+    // true while the "Change location" map pop-up is open on the details screen
+    var showLocationPicker by remember { mutableStateOf(false) }
+
+    // Shown under the details buttons after changing the location ("Saving...", errors)
+    var locationMessage by remember { mutableStateOf("") }
 
     // The phone's back button does the same as the back arrows.
     // On the owner home there is nowhere to go back to, so it is turned off there.
@@ -103,9 +110,45 @@ fun OwnerScreens(ownerId: String, onSignOut: () -> Unit) {
                             ) {
                                 Text("Create lottery", color = Color(0xff566C11))
                             }
+                            Spacer(modifier = Modifier.height(8.dp))
+                            OutlinedButton(
+                                onClick = { locationMessage = ""; showLocationPicker = true },
+                                modifier = Modifier.testTag("change_location_button")
+                            ) {
+                                Text(
+                                    if (chosen.hasMapLocation()) "Change location" else "Set location on map",
+                                    color = Color(0xff566C11)
+                                )
+                            }
+                            if (locationMessage.isNotEmpty()) {
+                                Text(locationMessage, modifier = Modifier.testTag("location_message_text"))
+                            }
                         }
                     }
                 )
+
+                if (showLocationPicker) {
+                    LocationPickerDialog(
+                        initial = chosen.mapPosition(),
+                        title = "Move the pin for ${chosen.getCampsiteName()}",
+                        onDismiss = { showLocationPicker = false },
+                        onSave = { point, _ ->
+                            showLocationPicker = false
+                            locationMessage = "Saving..."
+                            CampsiteRepository.updateLocation(chosen.getId(), point.latitude, point.longitude) { worked ->
+                                if (worked) {
+                                    // Reload, so the map on the card shows the new pin
+                                    CampsiteRepository.getById(chosen.getId()) { updated ->
+                                        selectedCampsite = updated
+                                        locationMessage = "Location saved"
+                                    }
+                                } else {
+                                    locationMessage = "Could not save the location, please try again."
+                                }
+                            }
+                        }
+                    )
+                }
             }
         }
 
