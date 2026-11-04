@@ -1,6 +1,7 @@
 package com.example.project_halfway
 
 import androidx.compose.material3.Text
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
@@ -74,13 +75,16 @@ class CampsiteTapTest {
     @Test
     fun detailsCard_withActionArea_showsItInsteadOfJoin() {
         composeRule.setContent {
-            CampsiteDetailedCard(
-                campsite = makeCampsite("camp_012", "Site 12"),
-                isLotteryActive = true,
-                onBackClick = {},
-                onJoinClick = {},
-                actionArea = { Text("Lottery section goes here") }
-            )
+            // A placeholder instead of a real Google Map, so no Play services are needed
+            CompositionLocalProvider(LocalShowRealMaps provides false) {
+                CampsiteDetailedCard(
+                    campsite = makeCampsite("camp_012", "Site 12"),
+                    isLotteryActive = true,
+                    onBackClick = {},
+                    onJoinClick = {},
+                    actionArea = { Text("Lottery section goes here") }
+                )
+            }
         }
 
         composeRule.onNodeWithText("Lottery section goes here").performScrollTo().assertIsDisplayed()
@@ -90,12 +94,14 @@ class CampsiteTapTest {
     @Test
     fun detailsCard_withoutActionArea_showsJoinButton() {
         composeRule.setContent {
-            CampsiteDetailedCard(
-                campsite = makeCampsite("camp_012", "Site 12"),
-                isLotteryActive = true,
-                onBackClick = {},
-                onJoinClick = {}
-            )
+            CompositionLocalProvider(LocalShowRealMaps provides false) {
+                CampsiteDetailedCard(
+                    campsite = makeCampsite("camp_012", "Site 12"),
+                    isLotteryActive = true,
+                    onBackClick = {},
+                    onJoinClick = {}
+                )
+            }
         }
 
         composeRule.onNodeWithText("Join lottery").performScrollTo().assertIsDisplayed()
