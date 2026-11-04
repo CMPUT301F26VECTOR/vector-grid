@@ -162,7 +162,7 @@ fun EntrantHomeScreenUI(
     }
 
     if (viewPolicyGuidelines){
-        AppPolicyandGuidelines (onBack={viewPolicyGuidelines = false})
+        AppPolicyAndGuidelines (onBack={viewPolicyGuidelines = false})
     }
     else{
     Column(
