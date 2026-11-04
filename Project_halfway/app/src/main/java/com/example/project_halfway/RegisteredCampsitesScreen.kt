@@ -1,6 +1,8 @@
 package com.example.project_halfway
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -70,7 +72,11 @@ fun RegisteredCampsitesList(
                 modifier = Modifier.testTag("empty_message")
             )
         } else {
-            LazyColumn(modifier = Modifier.testTag("campsite_list")) {
+            LazyColumn(
+                modifier = Modifier.testTag("campsite_list"),
+                contentPadding = PaddingValues(vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
                 items(campsites) { campsite ->
                     CampsiteDescriptionCard(campsite, onClick = { onCampsiteClick(campsite) })
                 }
