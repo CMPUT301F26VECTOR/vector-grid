@@ -51,7 +51,9 @@ jobs:
       - name: Save the page to the wiki
         working-directory: wiki
         run: |
-          git add -A -- 'Code-Documentation.md' 'Docs-*.md'
+          # Stage the page plus any old Docs-*.md pages the script deleted. A pattern
+          # that matches no file makes git add fail, so only name files git tracks.
+          git add -A -- 'Code-Documentation.md' $(git ls-files -- 'Docs-*.md')
           if git diff --cached --quiet; then
             echo "Documentation pages are already up to date."
             exit 0
