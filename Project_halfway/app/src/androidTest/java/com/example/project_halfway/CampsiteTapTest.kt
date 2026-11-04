@@ -3,7 +3,9 @@ package com.example.project_halfway
 import androidx.compose.material3.Text
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -15,8 +17,8 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 /**
- * UI tests for opening a campsite from its card (US 01.01.05, US 02.01.04):
- * the summary card's tap, the owner's list passing on the tapped campsite,
+ * UI tests for the campsite cards (US 01.01.04, US 01.01.05, US 02.01.04):
+ * what the summary card shows and its tap, the owner's list passing on the tapped campsite,
  * and the details card's action area. They give the screens campsites
  * directly, so they do not need Firestore.
  */
@@ -55,6 +57,50 @@ class CampsiteTapTest {
         composeRule.onNodeWithText("Site 12").performClick()
 
         assertTrue(tapped)
+    }
+
+    // The card is clickable, so Compose merges its texts into one node. The tagged
+    // texts below are looked up in the unmerged tree to find them on their own.
+
+    @Test
+    fun summaryCard_withLotteryText_showsTheTag() {
+        composeRule.setContent {
+            CampsiteDescriptionCard(
+                makeCampsite("camp_012", "Site 12"),
+                lotteryText = "Lottery closes in 5 days"
+            )
+        }
+
+        composeRule.onNodeWithTag("lottery_tag", useUnmergedTree = true).assertTextEquals("Lottery closes in 5 days")
+    }
+
+    @Test
+    fun summaryCard_withoutLotteryText_showsNoTag() {
+        composeRule.setContent {
+            CampsiteDescriptionCard(makeCampsite("camp_012", "Site 12"))
+        }
+
+        composeRule.onNodeWithTag("lottery_tag", useUnmergedTree = true).assertDoesNotExist()
+    }
+
+    @Test
+    fun summaryCard_noRatingYet_saysNew() {
+        composeRule.setContent {
+            // makeCampsite gives a rating of 0.0, which means no ratings yet
+            CampsiteDescriptionCard(makeCampsite("camp_012", "Site 12"))
+        }
+
+        composeRule.onNodeWithTag("rating_text", useUnmergedTree = true).assertTextEquals("New")
+    }
+
+    @Test
+    fun summaryCard_showsGuestsAndPrice() {
+        composeRule.setContent {
+            CampsiteDescriptionCard(makeCampsite("camp_012", "Site 12"))
+        }
+
+        composeRule.onNodeWithText("4 guests").assertIsDisplayed()
+        composeRule.onNodeWithText("$32.00 / night").assertIsDisplayed()
     }
 
     @Test
