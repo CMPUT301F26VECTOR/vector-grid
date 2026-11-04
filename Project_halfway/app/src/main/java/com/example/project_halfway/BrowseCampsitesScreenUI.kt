@@ -275,13 +275,36 @@ fun BrowseCampsitesScreenUI(
                     modifier = Modifier.padding(20.dp)
                 )
             } else {
+                Text(
+                    text = if (results.size == 1) "1 campsite" else "${results.size} campsites",
+                    color = Color.White,
+                    style = MaterialTheme.typography.labelLarge,
+                    modifier = Modifier.padding(start = 4.dp, bottom = 4.dp)
+                )
+
                 LazyColumn(
                     modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    contentPadding = PaddingValues(vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     items(results) { campsite ->
+                        // The campsite's open lottery, if any, as "Lottery closes in N days".
+                        // Loaded once per campsite; null (no tag) until it arrives or if none.
+                        var lotteryText by remember(campsite.getId()) { mutableStateOf<String?>(null) }
+                        LaunchedEffect(campsite.getId()) {
+                            LotteryRepository.getActiveLottery(campsite.getId()) { lottery ->
+                                lotteryText = lottery?.let {
+                                    WaitlistHelper.daysLeftText(it, System.currentTimeMillis())
+                                }
+                            }
+                        }
+
                         // Tapping a card opens its details (see the top of this function)
-                        CampsiteDescriptionCard(campsite, onClick = { selectedCampsite = campsite })
+                        CampsiteDescriptionCard(
+                            campsite,
+                            onClick = { selectedCampsite = campsite },
+                            lotteryText = lotteryText
+                        )
                     }
                 }
             }
