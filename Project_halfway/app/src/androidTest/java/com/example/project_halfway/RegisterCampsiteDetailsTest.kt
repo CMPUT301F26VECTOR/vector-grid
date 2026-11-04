@@ -1,6 +1,9 @@
 package com.example.project_halfway
 
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
@@ -13,8 +16,9 @@ import org.junit.runner.RunWith
 
 /**
  * UI tests for the extra campsite details on the Register Campsite screen
- * (US 02.01.02). Like RegisterCampsiteScreenTest, these stop before anything
- * is saved, so they do not need Firestore.
+ * (US 02.01.02), including the map location picked in LocationPickerDialog.
+ * Like RegisterCampsiteScreenTest, these stop before anything is saved, so they
+ * do not need Firestore. The map is FakePickerMap, so they don't need Google Maps.
  */
 @RunWith(AndroidJUnit4::class)
 class RegisterCampsiteDetailsTest {
@@ -25,7 +29,10 @@ class RegisterCampsiteDetailsTest {
     // Starts the screen with no owner signed in, and fills the required boxes
     private fun startWithRequiredFields() {
         composeRule.setContent {
-            RegisterCampsiteScreen()
+            // A fake map for the location pop-up: one button that "drops a pin" at Jasper
+            CompositionLocalProvider(LocalLocationPickerMap provides FakePickerMap.map) {
+                RegisterCampsiteScreen()
+            }
         }
         composeRule.onNodeWithTag("name_field").performTextInput("Site 56A")
         composeRule.onNodeWithTag("location_field").performTextInput("Edmonton, AB")
@@ -44,14 +51,36 @@ class RegisterCampsiteDetailsTest {
     }
 
     @Test
-    fun onlyLatitude_showsMapLocationError() {
+    fun noPin_saysNoMapLocationYet() {
         startWithRequiredFields()
 
-        composeRule.onNodeWithTag("latitude_field").performScrollTo().performTextInput("53.5")
-        composeRule.onNodeWithTag("save_button").performClick()
+        composeRule.onNodeWithTag("map_location_text").performScrollTo()
+            .assertTextEquals("No map location yet.")
+    }
 
-        composeRule.onNodeWithTag("message_text")
-            .assertTextEquals("Please enter both latitude and longitude, or leave both empty.")
+    @Test
+    fun pickingAPin_showsItsCoordinatesOnTheForm() {
+        startWithRequiredFields()
+
+        composeRule.onNodeWithTag("set_location_button").performScrollTo().performClick()
+        composeRule.onNodeWithTag("fake_map_pick").performClick()
+        composeRule.onNodeWithTag("location_save_button").performClick()
+
+        composeRule.onNodeWithTag("map_location_text").performScrollTo()
+            .assert(hasText("52.85070, -118.07700", substring = true))
+        composeRule.onNodeWithTag("remove_location_button").assertExists()
+    }
+
+    @Test
+    fun removingThePin_clearsIt() {
+        startWithRequiredFields()
+
+        composeRule.onNodeWithTag("set_location_button").performScrollTo().performClick()
+        composeRule.onNodeWithTag("fake_map_pick").performClick()
+        composeRule.onNodeWithTag("location_save_button").performClick()
+        composeRule.onNodeWithTag("remove_location_button").performScrollTo().performClick()
+
+        composeRule.onNodeWithTag("map_location_text").assertTextEquals("No map location yet.")
     }
 
     @Test

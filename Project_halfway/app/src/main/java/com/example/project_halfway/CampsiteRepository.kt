@@ -8,7 +8,7 @@ package com.example.project_halfway
  * Used for US 02.01.01 (register a campsite), US 02.03.01 (owner's campsites)
  * and the entrant browse and search stories.
  *
- * Outstanding issues: no delete or update yet; only save and getAll report
+ * Outstanding issues: no delete yet, and the only update is updateLocation; only save and getAll report
  * failures, the other loads just print them; getById gives no answer if the
  * id doesn't exist; not tested against the real database.
  */
@@ -104,6 +104,25 @@ object CampsiteRepository {
                 }
             }
             .addOnFailureListener { println("Load failed: ${it.message}") }
+    }
+
+    /**
+     * Moves a campsite's map pin, changing only its latitude and longitude
+     * (US 02.01.03). Everything else about the campsite stays the same.
+     *
+     * @param id the campsite's Firestore document id
+     * @param latitude the new latitude
+     * @param longitude the new longitude
+     * @param onDone gets true once Firestore has saved it, or false if it failed
+     */
+    fun updateLocation(id: String, latitude: Double, longitude: Double, onDone: (Boolean) -> Unit) {
+        campsites().document(id)
+            .update(mapOf("latitude" to latitude, "longitude" to longitude))
+            .addOnSuccessListener { onDone(true) }
+            .addOnFailureListener {
+                println("Location update failed: ${it.message}")
+                onDone(false)
+            }
     }
 
     /**
