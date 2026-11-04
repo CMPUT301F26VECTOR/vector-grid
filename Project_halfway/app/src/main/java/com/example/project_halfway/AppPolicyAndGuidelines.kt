@@ -17,7 +17,7 @@ import com.google.apps.card.v1.Columns
 
 
 @Composable
-fun AppPolicyandGuidelines(onBack:() ->Unit) {
+fun AppPolicyAndGuidelines(onBack:() ->Unit) {
 
     Column(modifier = Modifier.fillMaxSize()
         .padding(40.dp) ) {
