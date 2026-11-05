@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.outlined.AccountCircle
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.AlertDialog
@@ -40,6 +41,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -62,12 +64,17 @@ private val HomeGreen = Color(0xFF566C11)
  *
  * @param onExit called when SIGNOUT is pressed
  * @param onBrowseClick called when the Browse Campsites card is pressed
+ * @param onNotificationsClick called when the Notifications card is pressed
+ *
  */
 @Composable
 fun EntrantHomeScreenUI(
     onExit: () -> Unit,
-    onBrowseClick: () -> Unit = {}
-) {
+    onBrowseClick: () -> Unit = {},
+    onNotificationsClick: () -> Unit = {},
+
+    ) {
+
     var emailEdited by remember { mutableStateOf("") }
     var PNedited by remember { mutableStateOf("") }
     var nameEdited by remember { mutableStateOf("") }
@@ -78,6 +85,7 @@ fun EntrantHomeScreenUI(
     var openDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
     var viewPolicyGuidelines by remember {mutableStateOf(false)}
+
 
     val uid = FirebaseSecurity.auth.currentUser?.uid
     if (openDialog){
@@ -315,49 +323,18 @@ fun EntrantHomeScreenUI(
             }
         }
         Spacer(modifier = Modifier.height(28.dp))
+
         // Card for opening the Browse Campsites screen
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(140.dp)
-                .clickable { onBrowseClick() },
-            shape = RoundedCornerShape(6.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = Color.White
-            )
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.SpaceBetween
-            ) {
-                Icon(
-                    imageVector = Icons.Outlined.Search,
-                    contentDescription = null,
-                    tint = Color.Black,
-                    modifier = Modifier.size(30.dp)
-                )
+        HomeScreenCard(Icons.Outlined.Search, "Browse Campsites",
+            "Browse listings for sites with active or upcoming lotteries",
+            { onBrowseClick() })
 
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Text(
-                    text = "Browse Campsites",
-                    fontSize = 17.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.Black
-                )
-
-                Text(
-                    text = "Browse listings for sites with active or upcoming lotteries",
-                    fontSize = 13.sp,
-                    color = Color.Gray,
-                    lineHeight = 17.sp
-                )
-
-//        }
-            }
-
-        }
         Spacer(modifier = Modifier.height(12.dp) )
+
+        HomeScreenCard(Icons.Default.Notifications, "Notifications",
+            "View your recent notifications.",
+            { onNotificationsClick() })
+
         Button(onClick = {viewPolicyGuidelines = true},
             modifier = Modifier.fillMaxWidth()){
             Text(text = "App Policy and Guidelines",
@@ -435,8 +412,54 @@ fun EntrantHomeScreenUI(
 }
 
 
-//@Preview(showBackground = true, showSystemUi = true)
-//@Composable
-//fun EntrantHomeScreenPreview() {
-//    EntrantHomeScreenUI()
-//}
+@Composable
+fun HomeScreenCard(icon: ImageVector, title: String, subtitle: String,
+                   onCardClick: () -> Unit) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(140.dp)
+            .clickable { onCardClick() },
+        shape = RoundedCornerShape(6.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.White
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = Color.Black,
+                modifier = Modifier.size(30.dp)
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text(
+                text = title,
+                fontSize = 17.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.Black
+            )
+
+            Text(
+                text = subtitle,
+                fontSize = 13.sp,
+                color = Color.Gray,
+                lineHeight = 17.sp
+            )
+
+        }
+
+    }
+}
+
+
+@Preview(showBackground = true, showSystemUi = true)
+@Composable
+fun EntrantHomeScreenPreview() {
+    EntrantHomeScreenUI({}, {})
+}

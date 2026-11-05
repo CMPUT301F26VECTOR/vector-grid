@@ -85,6 +85,7 @@ fun AuthGate() {
         //entrant home screen and it also have a back button so it can come back to the welcome screen
         "entrant" -> {
             var showBrowse by rememberSaveable { mutableStateOf(false)}
+            var showNotifications by rememberSaveable { mutableStateOf(false)}
 
             if (showBrowse) {
                 BrowseCampsitesScreenUI(
@@ -92,13 +93,21 @@ fun AuthGate() {
                         showBrowse = false
                     }
                 )
-            } else {
+            }
+            else if (showNotifications) {
+                EntrantNotificationsScreen() // @TODO
+            }
+
+            else {
                 EntrantHomeScreenUI(
                     onExit = {
                         screen = "welcome"
                     },
                     onBrowseClick = {
                         showBrowse = true
+                    },
+                    onNotificationsClick = {
+                        showNotifications = true
                     }
                 )
             }
