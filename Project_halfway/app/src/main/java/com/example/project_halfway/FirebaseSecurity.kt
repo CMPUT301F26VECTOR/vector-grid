@@ -1,4 +1,3 @@
-
 package com.example.project_halfway
 
 import com.google.firebase.FirebaseApp
@@ -7,37 +6,35 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.FirebaseOptions
 
 /**
- * This is the most important object in the entire
- * App as it contains the firebase database object.
- * it is the object which stores all the details related
- * to campsite owner, entrant and even Admin.
- * For entrant and owner we have created two different sessions
- * so that entrant can have an anonymous account while the
- * campsite owner has to login or create an account.
- * for admin a similar approach will be used
+ * The app's Firebase connections, shared by every screen.
+ *
+ * There are two separate logins so an entrant and a campsite owner can be
+ * signed in at the same time on one phone:
+ * - auth / db: the entrant's login (anonymous device sign-in) and Firestore connection
+ * - ownerAuth / ownerDb: the campsite owner's login (email and password) and
+ *   Firestore connection, using a second Firebase app named "OwnerApp"
+ *
+ * The admin will get a separate session in the same way in a later part.
+ *
+ * **AI assistance (Varun Talwar):** made with the help of OpenAI ChatGPT on
+ * 2026-10-21, for the syntax and the setup around it. Creating two instances of
+ * the same database, so that the entrant and the campsite owner have different
+ * sessions (and the admin can be added next), was Varun's idea; ChatGPT was shown
+ * his code and helped him modify it. Prompt: "can you provide me syntax and of how
+ * to have two differnt sessions with what i have implemented so far for this
+ * project and how implement this context"
+ *
+ * Outstanding issues: none known.
  */
-
-
-
-// this code has been made with the help of OpenAI ChatGPT to how to make the syntax and other context part. although,
-//it was my idea to create the two instances of same db so that entrant and campsite owner can
-// different sessions and admin will also be added for next part.2026-10-21
-// the Ai was presented with my code that I wrote and it helped me modify it.
-//"can you provide me syntax and of how to have two differnt sessions with what i have implemented
-//so far for this project and how implement this context"
 object FirebaseSecurity {
-    // this code has been made with the help of OpenAI ChatGPT to how to make the syntax and other context part. although,
-//it was my idea to create the two instances of same db so that entrant and campsite owner can
-// different sessions and admin will also be added for next part.2026-10-21
-// the Ai was presented with my code that I wrote and it helped me modify it.
-//"can you provide me syntax and of how to have two differnt sessions with what i have implemented
-//so far for this project and how implement this context"
 
-    //entrant session
+    // Entrant session
+    /** The entrant's Firebase login. */
     val auth: FirebaseAuth by lazy {
         FirebaseAuth.getInstance()
     }
 
+    /** Firestore, signed in as the entrant. */
     val db: FirebaseFirestore by lazy {
         FirebaseFirestore.getInstance()
     }
@@ -55,10 +52,12 @@ object FirebaseSecurity {
             )!!
     }
 
+    /** The campsite owner's Firebase login (email and password). */
     val ownerAuth: FirebaseAuth by lazy {
         FirebaseAuth.getInstance(ownerApp)
     }
 
+    /** Firestore, signed in as the campsite owner. */
     val ownerDb: FirebaseFirestore by lazy {
         FirebaseFirestore.getInstance(ownerApp)
     }

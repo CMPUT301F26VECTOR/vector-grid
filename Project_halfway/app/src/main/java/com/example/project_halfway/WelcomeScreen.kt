@@ -1,7 +1,5 @@
 package com.example.project_halfway
 
-
-
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -16,9 +14,19 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 
 
+/**
+ * The first screen of the app: choose to continue as an Entrant or as a
+ * Campsite Owner. AuthGate decides what each button does.
+ *
+ * **AI assistance (Varun Talwar):** OpenAI ChatGPT was used for the button click
+ * handling on 2026-10-24. Prompt: "how can improve my code to have click"
+ *
+ * Outstanding issues: none known.
+ *
+ * @param onEntrantClick called when Entrant is pressed (signs in with the device)
+ * @param onOwnerClick called when Campsite Owner is pressed (opens the owner login)
+ */
 @Composable
-//ChatGPT was used here 2026-10-24
-// "how can improve my code to have click"
 fun WelcomeScreen(
     onEntrantClick: () -> Unit,
     onOwnerClick: () -> Unit

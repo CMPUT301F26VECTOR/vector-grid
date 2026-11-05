@@ -32,9 +32,23 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-
-
-
+/**
+ * The campsite owner sign-up screen: first name, last name, email and
+ * password. Creates the owner's account through FirebaseSecurity.ownerAuth
+ * and saves an Owner profile (role "owner") in the Firestore "Users"
+ * collection.
+ *
+ * **AI assistance (Varun Talwar):**
+ * - OpenAI ChatGPT was used for the title text style.
+ * - Creating the owner's Firebase account and its listeners was implemented with
+ *   OpenAI ChatGPT on 2026-10-24. Prompt: "Provide the firebase syntax for
+ *   creating a user and aslo how to add listeners"
+ *
+ * Outstanding issues: the boxes are not checked before sending (e.g. blank
+ * names), and if saving the profile to Firestore fails no message is shown.
+ *
+ * @param onSignUpSuccess called once the account and profile are saved
+ */
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun SignUpScreen (
@@ -53,7 +67,7 @@ fun SignUpScreen (
     ){
         Spacer(modifier = Modifier.height(150.dp))
 
-        //OpenAI ChatGPT was used for following line
+        // AI-assisted: see the AI assistance note in this function's KDoc
         Text(text ="Campsite\nReservation\nSystem",
             fontWeight = FontWeight.Thin,
             fontFamily = FontFamily.SansSerif,
@@ -147,13 +161,8 @@ fun SignUpScreen (
                 val ownerFirstName =firstName.trim()
                 val ownerLastName = lastName.trim()
                 val ownerEmail = Email.trim()
-<<<<<<< Updated upstream
 
-                //OpenAI ChatGPT was used here for this implementation of firebase 2026-10-24
-=======
-//OpenAI ChatGPT was used here for this implementation of firebase 2026-10-24
->>>>>>> Stashed changes
-                //"Provide the firebase syntax for creating a user and aslo how to add listeners"
+                // AI-assisted: see the AI assistance note in this function's KDoc
                 FirebaseSecurity.ownerAuth.createUserWithEmailAndPassword(Email.trim(),password)
                     .addOnCompleteListener { task ->
                         if (task.isSuccessful){

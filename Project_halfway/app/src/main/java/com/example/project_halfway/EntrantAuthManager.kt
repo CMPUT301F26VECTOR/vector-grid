@@ -4,42 +4,40 @@ import com.google.firebase.firestore.Source
 import com.google.firebase.auth.FirebaseUser
 
 /**
- * This object is used when a sign up happens for entrant
- * it has three functions sigIN, create anonymous account and
- * ensure profile. the first is what sign up and the second is
- * for entrant which helps him signin anonymously wihout passsword
- * and email and the last fucntion is to ensure of the user
- * already have an account. it doesn't need to make another one
- * it can just use old uid from firebase and connect it.
+ * Signs entrants in with their device, with no username or password
+ * (Firebase anonymous sign-in), and makes sure each entrant has a profile
+ * in the Firestore "Users" collection with role "entrant".
+ *
+ * It has three steps: signIn starts sign-in, createAnonymousAccount signs a new
+ * device in without a password or email, and ensureProfile reuses the entrant's
+ * existing profile (the same Firebase uid) instead of making a second one.
+ *
+ * Used for US 01.09.01 (entrants are identified by their device).
+ *
+ * **AI assistance (Varun Talwar):** made with OpenAI ChatGPT and the resources the
+ * TA provided by email, on 2026-10-22. The create anonymous account and ensure
+ * profile steps were Varun's ideas and were implemented with that help; ChatGPT
+ * also helped add the listeners, which were a great help for debugging. ChatGPT
+ * was shown his code and helped him modify it. Prompt: "help me with my sigIn,
+ * create anonymous account and ensure profile functions with the code I have
+ * already written for them"
+ *
+ * Outstanding issues: if the signed-in account's profile exists but its role
+ * is not "entrant", neither onSuccess nor onFailure is called, so the screen
+ * keeps showing "Loading...".
  */
-
-
-//this code was made with OpenAI ChatGPT and the resources provided by the TA via email.
-// here create anonymous account and ensure profile were my ideas and has been implemented
-// with the help above. Also, Ai was used to add listeners which were a great help to debug the code.
-// the Ai was presented with my code that I wrote and it helped me modify it. 2026-10-22
-//"help me with my sigIn, create anonymous account and ensure profile functions with the code I have
-// already written for them"
 object EntrantAuthManager {
 
-<<<<<<< Updated upstream
-=======
     /**
      * Signs the entrant in with this device. Reuses the device's existing
      * anonymous account if there is one, otherwise creates a new one, then
-     * checks or creates the entrant's profile.
+     * checks or creates the entrant's profile. See the AI assistance note on
+     * EntrantAuthManager.
      *
      * @param onSuccess called with the signed-in user once their profile is ready
      * @param onFailure called with an error message if sign-in fails, or if a
      * different (non-anonymous) account is already signed in
      */
-    //this code was made with OpenAI ChatGPT and the resources provided by the TA via email.
-// here create anonymous account and ensure profile were my ideas and has been implemented
-// with the help above. Also, Ai was used to add listeners which were a great help to debug the code.
-// the Ai was presented with my code that I wrote and it helped me modify it. 2026-10-22
-//"help me with my sigIn, create anonymous account and ensure profile functions with the code I have
-// already written for them"
->>>>>>> Stashed changes
     fun signIn(
         onSuccess: (FirebaseUser) -> Unit,
         onFailure: (String) -> Unit
@@ -74,6 +72,7 @@ object EntrantAuthManager {
         }
     }
 
+    // Makes a new anonymous Firebase account for this device, then sets up its profile.
     private fun createAnonymousAccount(
         onSuccess: (FirebaseUser) -> Unit,
         onFailure: (String) -> Unit
@@ -94,6 +93,7 @@ object EntrantAuthManager {
                 )
             }
     }
+    // Loads the user's "Users" document; creates a blank entrant profile if it doesn't exist yet.
     private fun ensureProfile(
         user: FirebaseUser,
         onSuccess: (FirebaseUser) -> Unit,

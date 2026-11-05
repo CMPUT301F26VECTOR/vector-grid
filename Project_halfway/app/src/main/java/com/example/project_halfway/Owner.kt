@@ -1,15 +1,16 @@
 package com.example.project_halfway
 
 /**
- * This class represents the Owner class and contains
- * its properties like name, email,
- * pic and uid. These properties will be used to store
- * in a list and later will be used by firebase to
- * store them in the database.
+ * A campsite owner's account details, saved in the Firestore "Users"
+ * collection when they sign up (see SignUpScreen).
  *
- * @property Name This is the name of entrant
- * @property EmailAddress this is the email of entrant
- * @property uid this it the unique identifier on firebase database
+ * Outstanding issues: the campsites list is only kept in memory; the owner's
+ * campsites are loaded from Firestore with CampsiteRepository.getByOwner.
+ *
+ * @property Name the owner's name
+ * @property EmailAddress the email address they sign in with
+ * @property ProfilePictureURL link to their profile picture, or "" if none
+ * @property uid their Firebase Authentication user id
  */
 data class Owner (
     val Name:String,
@@ -21,9 +22,15 @@ data class Owner (
 
     // only the campsite owner can add or remove
     // if we do mutable list then all can change it
+    /** The campsites this owner has added. Read only; use addCampsite to add one. */
     val campsites: List<CampsiteModel>
         get() = _allOwnerCampsites
 
+    /**
+     * Adds a campsite to this owner's list.
+     *
+     * @param newCampsite the campsite to add
+     */
     fun addCampsite(newCampsite: CampsiteModel){
         _allOwnerCampsites.add(newCampsite)
     }
