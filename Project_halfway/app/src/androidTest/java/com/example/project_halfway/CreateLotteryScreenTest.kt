@@ -41,6 +41,22 @@ class CreateLotteryScreenTest {
         waitlistCapacity = "40"
     )
 
+    // Makes a simple campsite with the given id and name
+    private fun makeCampsite(id: String, name: String): CampsiteModel {
+        return CampsiteModel(
+            campsiteName = name,
+            campgroundName = "",
+            location = "",
+            longitude = 0.0,
+            latitude = 0.0,
+            occupancy = 4,
+            userRating = 0.0,
+            description = "",
+            imageUrl = "",
+            id = id
+        )
+    }
+
     @Test
     fun saveWithoutDates_showsErrorAndSavesNothing() {
         var saved: Lottery? = null
@@ -126,5 +142,49 @@ class CreateLotteryScreenTest {
 
         composeRule.onNodeWithTag("create_lottery_title")
             .assertTextEquals("Create Lottery for Site 56A")
+    }
+    @Test
+    fun tickingASecondCampsite_savesLotteryWithBoth() {
+        var saved: Lottery? = null
+        composeRule.setContent {
+            CreateLotteryScreen(
+                campsiteId = "camp1",
+                campsiteName = "Lakeside",
+                initialCampsites = listOf(
+                    makeCampsite("camp1", "Lakeside"),
+                    makeCampsite("camp2", "Hilltop")
+                ),
+                initialSettings = goodSettings,
+                save = { lottery, onDone ->
+                    saved = lottery
+                    onDone(true)
+                }
+            )
+        }
+
+        composeRule.onNodeWithTag("campsite_check_camp2").performClick()
+        composeRule.onNodeWithTag("create_lottery_save").performClick()
+
+        assertEquals(listOf("camp1", "camp2"), saved!!.campsiteIds)
+    }
+
+    @Test
+    fun untickingEveryCampsite_isRefused() {
+        var called = false
+        composeRule.setContent {
+            CreateLotteryScreen(
+                campsiteId = "camp1",
+                initialCampsites = listOf(makeCampsite("camp1", "Lakeside")),
+                initialSettings = goodSettings,
+                save = { _, onDone -> called = true; onDone(true) }
+            )
+        }
+
+        composeRule.onNodeWithTag("campsite_check_camp1").performClick()
+        composeRule.onNodeWithTag("create_lottery_save").performClick()
+
+        composeRule.onNodeWithTag("create_lottery_message")
+            .assertTextEquals("Please pick at least one campsite.")
+        assertEquals(false, called)
     }
 }
