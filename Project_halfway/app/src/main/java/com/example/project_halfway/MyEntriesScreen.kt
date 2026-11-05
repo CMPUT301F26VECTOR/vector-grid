@@ -37,7 +37,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-private val EntriesGreen = Color(0xFF526B0D)
+private val EntriesGreen = Color(0xFF566C11)
 
 /**
  * The "My Reservations & Entries" screen from our mockups (entrant screen 9).
