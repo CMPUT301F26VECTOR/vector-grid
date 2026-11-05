@@ -22,6 +22,24 @@ import com.google.firebase.auth.FirebaseUser
 // already written for them"
 object EntrantAuthManager {
 
+<<<<<<< Updated upstream
+=======
+    /**
+     * Signs the entrant in with this device. Reuses the device's existing
+     * anonymous account if there is one, otherwise creates a new one, then
+     * checks or creates the entrant's profile.
+     *
+     * @param onSuccess called with the signed-in user once their profile is ready
+     * @param onFailure called with an error message if sign-in fails, or if a
+     * different (non-anonymous) account is already signed in
+     */
+    //this code was made with OpenAI ChatGPT and the resources provided by the TA via email.
+// here create anonymous account and ensure profile were my ideas and has been implemented
+// with the help above. Also, Ai was used to add listeners which were a great help to debug the code.
+// the Ai was presented with my code that I wrote and it helped me modify it. 2026-10-22
+//"help me with my sigIn, create anonymous account and ensure profile functions with the code I have
+// already written for them"
+>>>>>>> Stashed changes
     fun signIn(
         onSuccess: (FirebaseUser) -> Unit,
         onFailure: (String) -> Unit

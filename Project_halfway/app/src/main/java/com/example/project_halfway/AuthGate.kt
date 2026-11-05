@@ -7,11 +7,31 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import com.google.firebase.auth.FirebaseAuth
 
 
+<<<<<<< Updated upstream
+=======
+/**
+ * Decides which screen to show, starting with WelcomeScreen:
+ * - Entrant: signs in with the device (EntrantAuthManager), then shows the
+ *   entrant home screen, which can open Browse Campsites
+ * - Campsite Owner: shows LoginScreenUI, then the owner's screens
+ *   (OwnerScreens, starting at the owner home) after login
+ *
+ * Used for US 01.09.01 and the owner login.
+ *
+ * Outstanding issues: which screen is open is kept in memory only, so the app
+ * goes back to the welcome screen when it is restarted. currentUser is tracked
+ * but not used to skip the welcome screen yet.
+ */
+>>>>>>> Stashed changes
 //This function code has been made in collaboration with OpenAI ChatGPT. It was my idea to have a file
 // which was to navigate to entrant or the owner and ChatGPT was used to help for this implementation.
 // the Ai was presented with my code that I wrote and it helped me modify it. 2026-10-18
 // "How can I design an Authentication page where we can navigate using two buttons with entrant and
+<<<<<<< Updated upstream
 //campsite owners
+=======
+//campsite owners give me a roadmap"
+>>>>>>> Stashed changes
 @Composable
 fun AuthGate() {
 

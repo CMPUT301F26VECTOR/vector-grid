@@ -17,6 +17,8 @@ import androidx.compose.ui.unit.dp
 
 
 @Composable
+//ChatGPT was used here 2026-10-24
+// "how can improve my code to have click"
 fun WelcomeScreen(
     onEntrantClick: () -> Unit,
     onOwnerClick: () -> Unit
