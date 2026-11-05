@@ -1,11 +1,14 @@
 package com.example.project_halfway
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
  * Unit tests for CampsiteModel.getAvailableDateRangesString, the dates shown
- * on the campsite summary card.
+ * on the campsite summary card, and CampsiteModel.hasMapLocation, which decides
+ * whether the details card shows a map (US 01.01.05).
  */
 class CampsiteModelTest {
 
@@ -42,5 +45,34 @@ class CampsiteModelTest {
             "2026-11-10 - 2026-11-15, 2026-12-01 - 2026-12-05",
             campsite(ranges).getAvailableDateRangesString()
         )
+    }
+
+    // A campsite with just a map pin, for the hasMapLocation tests
+    private fun campsiteAt(latitude: Double, longitude: Double) = CampsiteModel(
+        campsiteName = "Whistlers",
+        campgroundName = "Jasper",
+        location = "Jasper, AB",
+        longitude = longitude,
+        latitude = latitude,
+        occupancy = 6,
+        description = "",
+        imageUrl = ""
+    )
+
+    @Test
+    fun noPin_hasNoMapLocation() {
+        assertFalse(campsiteAt(0.0, 0.0).hasMapLocation())
+    }
+
+    @Test
+    fun realPin_hasMapLocation() {
+        assertTrue(campsiteAt(52.8507, -118.077).hasMapLocation())
+    }
+
+    @Test
+    fun pinOnTheEquatorOrPrimeMeridian_stillCounts() {
+        // Only exactly (0, 0) means "no pin"
+        assertTrue(campsiteAt(0.0, -118.077).hasMapLocation())
+        assertTrue(campsiteAt(52.8507, 0.0).hasMapLocation())
     }
 }

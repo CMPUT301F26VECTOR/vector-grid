@@ -3,7 +3,8 @@ package com.example.project_halfway
 /**
  * Model for one campsite listing.
  * Holds the campsite's data, read through the getter functions.
- * Latitude and longitude come from the owner's map pin (US 02.01.02).
+ * Latitude and longitude come from the pin the owner drops on a Google Map
+ * (US 02.01.02); both are 0.0 when there is no pin (see hasMapLocation).
  * Saving and loading is done in CampsiteRepository.
  *
  * Outstanding issues: image upload is not built yet.
@@ -116,6 +117,17 @@ class CampsiteModel (
     /** Returns availableDateRanges attribute. */
     public fun getAvailableDateRanges() : List<Map<String, String>> {
         return availableDateRanges
+    }
+
+    /**
+     * Tells whether the owner has put this campsite on the map. A campsite saved
+     * without a map pin has latitude and longitude both 0.0, so that counts as no
+     * location (no real campsite is at 0, 0, which is in the Atlantic Ocean).
+     *
+     * @return true if the campsite has a map location
+     */
+    public fun hasMapLocation() : Boolean {
+        return latitude != 0.0 || longitude != 0.0
     }
 
 }
