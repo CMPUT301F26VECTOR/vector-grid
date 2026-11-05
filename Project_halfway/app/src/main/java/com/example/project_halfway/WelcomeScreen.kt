@@ -1,7 +1,5 @@
 package com.example.project_halfway
 
-
-
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -20,6 +18,9 @@ import androidx.compose.ui.unit.dp
  * The first screen of the app: choose to continue as an Entrant or as a
  * Campsite Owner. AuthGate decides what each button does.
  *
+ * **AI assistance (Varun Talwar):** OpenAI ChatGPT was used for the button click
+ * handling on 2026-10-24. Prompt: "how can improve my code to have click"
+ *
  * Outstanding issues: none known.
  *
  * @param onEntrantClick called when Entrant is pressed (signs in with the device)
@@ -32,17 +33,21 @@ fun WelcomeScreen(
 ) {
     Column(
         modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Button(onClick = onEntrantClick) {
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ){
+        Button(
+            onClick = onEntrantClick
+        ){
             Text("Entrant")
         }
+        Spacer(modifier = Modifier.height(22.dp))
 
-        Spacer(modifier = Modifier.height(20.dp))
-
-        Button(onClick = onOwnerClick) {
+        Button(
+            onClick = onOwnerClick
+        ){
             Text("Campsite Owner")
         }
     }
+
 }
