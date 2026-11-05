@@ -323,7 +323,7 @@ fun SignUpScreen (
                 )
             },
             onValueChange = {password = it},
-            label ={Text(text="Passowrd")},
+            label ={Text(text="Password")},
             placeholder = {Text(text="************")}
         )
 

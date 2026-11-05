@@ -30,6 +30,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.google.android.gms.maps.model.LatLng
 
 /**
  * Register Campsite screen for the campsite owner (US 02.01.01, US 02.01.02).
@@ -37,9 +38,12 @@ import androidx.compose.ui.unit.dp
  * checks what was typed and builds a CampsiteModel, then CampsiteRepository
  * stores it in Firestore so entrants can find it.
  *
+ * The campsite's map location is chosen by dropping a pin on a Google Map in
+ * LocationPickerDialog. It is optional: a campsite saved without a pin shows
+ * "No location yet" on its details.
+ *
  * Outstanding issues: the Upload button from the mockup is not built yet, so
- * no image is saved. The map pin is typed in as latitude and longitude until
- * a map picker is built. The ownerId has to be passed in by the screen that
+ * no image is saved. The ownerId has to be passed in by the screen that
  * opens this one (the owner home screen).
  *
  * @param ownerId user id of the signed in campsite owner; saving is refused if blank
@@ -57,12 +61,17 @@ fun RegisterCampsiteScreen(ownerId: String = "") {
     var services by remember { mutableStateOf("") }
     var tags by remember { mutableStateOf("") }
     var price by remember { mutableStateOf("") }
+    // The map pin, kept as text because CampsiteForm checks and converts it
     var latitude by remember { mutableStateOf("") }
     var longitude by remember { mutableStateOf("") }
+    var placeName by remember { mutableStateOf("") }
     var availableDates by remember { mutableStateOf(listOf<Map<String, String>>()) }
 
     // true while the calendar pop-up is open
     var showDatePicker by remember { mutableStateOf(false) }
+
+    // true while the map pop-up is open
+    var showLocationPicker by remember { mutableStateOf(false) }
 
     // Message shown under the Save button (an error, "Saving..." or "Listing created")
     var message by remember { mutableStateOf("") }
@@ -86,8 +95,32 @@ fun RegisterCampsiteScreen(ownerId: String = "") {
             FormField("Services, separated by commas", services, { services = it }, "services_field")
             FormField("Tags, separated by commas", tags, { tags = it }, "tags_field")
             FormField("Price per night ($)", price, { price = it }, "price_field", KeyboardType.Decimal)
-            FormField("Latitude (optional)", latitude, { latitude = it }, "latitude_field", KeyboardType.Decimal)
-            FormField("Longitude (optional)", longitude, { longitude = it }, "longitude_field", KeyboardType.Decimal)
+
+            // Map location: a pin dropped on a Google Map (optional)
+            Text("Map location (optional)", modifier = Modifier.padding(top = 12.dp))
+            val lat = latitude.toDoubleOrNull()
+            val lng = longitude.toDoubleOrNull()
+            Text(
+                if (lat == null || lng == null) "No map location yet."
+                else "$placeName (${formatLatLng(lat, lng)})",
+                modifier = Modifier.testTag("map_location_text")
+            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                OutlinedButton(
+                    onClick = { showLocationPicker = true },
+                    modifier = Modifier.testTag("set_location_button")
+                ) {
+                    Text(if (lat == null) "Set location on map" else "Change location")
+                }
+                if (lat != null) {
+                    TextButton(
+                        onClick = { latitude = ""; longitude = ""; placeName = "" },
+                        modifier = Modifier.testTag("remove_location_button")
+                    ) {
+                        Text("Remove")
+                    }
+                }
+            }
 
             // Available dates: one row per range, each with a Remove button
             Text("Available dates", modifier = Modifier.padding(top = 12.dp))
@@ -147,6 +180,26 @@ fun RegisterCampsiteScreen(ownerId: String = "") {
         }
 
         Text(message, modifier = Modifier.testTag("message_text"))
+    }
+
+    if (showLocationPicker) {
+        val lat = latitude.toDoubleOrNull()
+        val lng = longitude.toDoubleOrNull()
+        LocationPickerDialog(
+            initial = if (lat != null && lng != null) LatLng(lat, lng) else null,
+            onDismiss = { showLocationPicker = false },
+            onSave = { point, name ->
+                latitude = point.latitude.toString()
+                longitude = point.longitude.toString()
+                placeName = name
+                // Fill in the Location box from the pin if the owner left it empty and
+                // a real place name was found (not just the coordinates).
+                if (location.isBlank() && name != formatLatLng(point.latitude, point.longitude)) {
+                    location = name
+                }
+                showLocationPicker = false
+            }
+        )
     }
 
     if (showDatePicker) {
