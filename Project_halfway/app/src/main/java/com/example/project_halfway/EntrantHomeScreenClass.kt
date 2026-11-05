@@ -138,11 +138,8 @@ class EntrantHomeScreenClass : ComponentActivity() {
             }
 
             Project_halfwayTheme {
-//                if (showOwnerHome) {
-////                    Text("Owner Home Screen")
-//                    OwnerHomeScreenUI()
-//
-//                }
+//This part has been implemented with OpenAI ChatGPT help, 2026-10-25
+                // "can help me to connect my code to next home screen"
                 if (showOwnerHome) {
                     OwnerHomeScreenUI(
                         onSignOut = {

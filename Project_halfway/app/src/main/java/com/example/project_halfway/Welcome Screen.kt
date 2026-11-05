@@ -23,17 +23,21 @@ fun WelcomeScreen(
 ) {
     Column(
         modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Button(onClick = onEntrantClick) {
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ){
+        Button(
+            onClick = onEntrantClick
+        ){
             Text("Entrant")
         }
+        Spacer(modifier = Modifier.height(22.dp))
 
-        Spacer(modifier = Modifier.height(20.dp))
-
-        Button(onClick = onOwnerClick) {
+        Button(
+            onClick = onOwnerClick
+        ){
             Text("Campsite Owner")
         }
     }
+
 }
