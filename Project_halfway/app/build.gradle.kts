@@ -81,7 +81,11 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
     implementation("androidx.media3:media3-common:1.11.1")
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
-    implementation("com.google.firebase:firebase-messaging-ktx:24.1.0") // For notifications
+
+    // For notifications
+    implementation("com.google.firebase:firebase-messaging-ktx:24.1.0")
+    implementation("com.google.accompanist:accompanist-permissions:0.30.1")
+
 }
 // Dokka: builds HTML documentation from the KDoc comments in the code.
 // Run  ./gradlew :app:dokkaGenerate  and open app/build/dokka/html/index.html
