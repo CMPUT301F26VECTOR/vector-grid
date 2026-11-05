@@ -13,6 +13,7 @@
         </DropdownSelection>
         <DialogSelection />
       </SelectionState>
+<<<<<<< Updated upstream
       <SelectionState runConfigName="buttons_on_Welcome_screen() (1)">
         <option name="selectionMode" value="DROPDOWN" />
         <DropdownSelection timestamp="2026-10-24T18:01:03.232751Z">
@@ -63,6 +64,14 @@
           <Target type="DEFAULT_BOOT">
             <handle>
               <DeviceId pluginId="LocalEmulator" identifier="path=/Users/varun/.android/avd/Pixel_8a.avd" />
+=======
+      <SelectionState runConfigName="testingCreateAccount()">
+        <option name="selectionMode" value="DROPDOWN" />
+        <DropdownSelection timestamp="2026-11-03T22:19:34.409041400Z">
+          <Target type="DEFAULT_BOOT">
+            <handle>
+              <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\ParneetBrar\.android\avd\Pixel_8.avd" />
+>>>>>>> Stashed changes
             </handle>
           </Target>
         </DropdownSelection>
