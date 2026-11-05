@@ -1,5 +1,11 @@
 package com.example.project_halfway
 
+/**
+ * this class will contain all the
+ * information for all the entrants, owners,
+ * campsites and images.(yet to be implemented.)
+ */
+
 class Admin (
     private val Name:String,
     private val Password:String,
