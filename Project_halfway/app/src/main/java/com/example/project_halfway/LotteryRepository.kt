@@ -4,11 +4,13 @@ import com.google.firebase.Timestamp
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.Source
+import com.google.firebase.firestore.Filter
 
 /**
  * Saves and loads lotteries in the Firestore "lotteries" collection.
  * Each lottery document looks like this:
  *   campsiteId : "abc123"
+ *  campsiteIds: ["abc123", "def456"]  (every campsite in the lottery, US 02.04.02)
  *   startDate  : timestamp (or a number in milliseconds)
  *   endDate    : timestamp (or a number in milliseconds)
  *   waitingList: ["entrantUid1", "entrantUid2", ...]
@@ -30,7 +32,7 @@ import com.google.firebase.firestore.Source
  * (getLotteriesForCampsite, drawIfDue, getEntrantNames) use ownerDb.
  *
  * Outstanding issues: no delete yet. Lotteries are created through save from
- * CreateLotteryScreen, which is test-only until Mejida's screen replaces it.
+ * CreateLotteryScreen (US 02.04.01, US 02.04.02).
  * The draw runs when the owner opens the lottery's waitlist screen after
  * registration closes, not on a server timer (see drawIfDue).
  */
@@ -68,7 +70,12 @@ object LotteryRepository {
      * Gives back null if there is none (or if loading failed).
      */
     fun getActiveLottery(campsiteId: String, onResult: (Lottery?) -> Unit) {
-        lotteries().whereEqualTo("campsiteId", campsiteId).get()
+        lotteries().where(
+            Filter.or(
+                Filter.equalTo("campsiteId", campsiteId),
+                Filter.arrayContains("campsiteIds", campsiteId)
+            )
+        ).get()
             .addOnSuccessListener { result ->
                 val now = System.currentTimeMillis()
                 var active: Lottery? = null
@@ -186,7 +193,12 @@ object LotteryRepository {
      * Gives back an empty list if there are none (or if loading failed).
      */
     fun getLotteriesForCampsite(campsiteId: String, onResult: (List<Lottery>) -> Unit) {
-        ownerLotteries().whereEqualTo("campsiteId", campsiteId).get()
+        ownerLotteries().where(
+            Filter.or(
+                Filter.equalTo("campsiteId", campsiteId),
+                Filter.arrayContains("campsiteIds", campsiteId)
+            )
+        ).get()
             .addOnSuccessListener { result ->
                 val list = mutableListOf<Lottery>()
                 for (document in result.documents) {
@@ -295,7 +307,8 @@ object LotteryRepository {
      */
     fun toMap(lottery: Lottery): Map<String, Any> {
         val map = mutableMapOf<String, Any>(
-            "campsiteId" to lottery.campsiteId,
+            "campsiteId" to (lottery.campsiteIds.firstOrNull() ?: lottery.campsiteId),
+            "campsiteIds" to lottery.campsiteIds,
             "startDate" to lottery.startDate,
             "endDate" to lottery.endDate,
             "waitingList" to lottery.waitingList,
@@ -327,6 +340,8 @@ object LotteryRepository {
      */
     fun fromMap(id: String, m: Map<String, Any>): Lottery {
         val campsiteId = m["campsiteId"] as? String ?: ""
+        // Newer lotteries list every campsite; older ones only have campsiteId.
+        val campsiteIds = readIds(m["campsiteIds"]).ifEmpty { listOf(campsiteId) }
 
         val list = mutableListOf<String>()
         val value = m["waitingList"]
@@ -344,7 +359,7 @@ object LotteryRepository {
 
         return Lottery(
             id = id,
-            campsiteId = campsiteId,
+            campsiteId = campsiteIds.first(),
             startDate = readDate(m["startDate"]),
             endDate = readDate(m["endDate"]),
             waitingList = list,
@@ -355,7 +370,8 @@ object LotteryRepository {
             bookingStartDate = readDate(m["bookingStartDate"]),
             bookingEndDate = readDate(m["bookingEndDate"]),
             // 0 or less (e.g. typed in the console) would block everyone, so treat it as no limit
-            waitlistCapacity = if (capacity is Number && capacity.toInt() > 0) capacity.toInt() else null
+            waitlistCapacity = if (capacity is Number && capacity.toInt() > 0) capacity.toInt() else null,
+            campsiteIds = campsiteIds
         )
     }
 
