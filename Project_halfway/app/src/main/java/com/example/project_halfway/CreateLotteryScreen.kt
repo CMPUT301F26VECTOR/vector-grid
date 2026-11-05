@@ -11,6 +11,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -19,6 +20,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.Row
+import androidx.compose.material3.Checkbox
+import androidx.compose.ui.Alignment
 
 /**
  * Create Lottery screen for one of the owner's campsites (US 02.04.01).
@@ -35,6 +39,8 @@ import androidx.compose.ui.unit.dp
  *
  * @param campsiteId id of the campsite the lottery is for; saving is refused if blank
  * @param campsiteName name shown in the title so the owner knows which campsite it is for
+ * @param ownerId id of the signed-in owner, used to load their campsites; blank means no list
+ * @param initialCampsites campsites to show right away (tests use this instead of Firestore)
  * @param initialSettings what the form starts with; empty by default
  * @param save stores the lottery and reports whether it worked; LotteryRepository.save
  * by default, and replaced in tests so they don't need Firestore
@@ -43,6 +49,8 @@ import androidx.compose.ui.unit.dp
 fun CreateLotteryScreen(
     campsiteId: String,
     campsiteName: String = "",
+    ownerId: String = "",
+    initialCampsites: List<CampsiteModel> = emptyList(),
     initialSettings: LotterySettings = LotterySettings(),
     save: (Lottery, (Boolean) -> Unit) -> Unit = { lottery, onDone ->
         LotteryRepository.save(lottery, onDone)
@@ -55,6 +63,16 @@ fun CreateLotteryScreen(
 
     // true while saving and after it worked, so one press makes one lottery
     var saveLocked by remember { mutableStateOf(false) }
+    var ownerCampsites by remember { mutableStateOf(initialCampsites) }
+    var selectedIds by remember {
+        mutableStateOf(if (campsiteId.isBlank()) emptyList() else listOf(campsiteId))
+    }
+
+    LaunchedEffect(ownerId) {
+        if (ownerId.isNotBlank()) {
+            CampsiteRepository.getByOwner(ownerId) { found -> ownerCampsites = found }
+        }
+    }
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
 
@@ -67,6 +85,24 @@ fun CreateLotteryScreen(
                 .weight(1f)
                 .verticalScroll(rememberScrollState())
         ) {
+            if (ownerCampsites.isNotEmpty()) {
+                Text("Campsites in this lottery", style = MaterialTheme.typography.titleMedium)
+                ownerCampsites.forEach { campsite ->
+                    val id = campsite.getId()
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(
+                            checked = id in selectedIds,
+                            enabled = !saveLocked,
+                            onCheckedChange = { ticked ->
+                                selectedIds = if (ticked) selectedIds + id else selectedIds - id
+                                if (!saveLocked) message = ""
+                            },
+                            modifier = Modifier.testTag("campsite_check_$id")
+                        )
+                        Text(campsite.getCampsiteName())
+                    }
+                }
+            }
             LotterySettingsForm(
                 settings = settings,
                 onSettingsChange = {
@@ -86,10 +122,12 @@ fun CreateLotteryScreen(
                     message = error
                 } else if (campsiteId.isBlank()) {
                     message = "Please pick a campsite first."
+                } else if (selectedIds.isEmpty()) {
+                    message = "Please pick at least one campsite."
                 } else {
                     message = "Saving..."
                     saveLocked = true
-                    save(settings.toLottery(campsiteId)) { worked ->
+                    save(settings.toLottery(selectedIds.first(), campsiteIds = selectedIds)) { worked ->
                         if (worked) {
                             message = "Lottery created"
                         } else {

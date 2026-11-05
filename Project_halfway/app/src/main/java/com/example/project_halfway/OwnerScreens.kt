@@ -25,6 +25,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
+import com.example.project_halfway.CampsiteRepository.updateLocation
+
 
 /**
  * Shows whichever campsite owner screen is open and moves between them: the
@@ -72,18 +74,22 @@ fun OwnerScreens(ownerId: String, onSignOut: () -> Unit) {
     val chosen = selectedCampsite
 
     when (screen) {
-        "register" -> WithBackArrow(onBack = { screen = ownerBackTarget(screen) }) {
-            RegisterCampsiteScreen(ownerId = ownerId)
+        "register" -> {
+            WithBackArrow(onBack = { screen = ownerBackTarget(screen) }) {
+                RegisterCampsiteScreen(ownerId = ownerId)
+            }
         }
 
-        "mine" -> WithBackArrow(onBack = { screen = ownerBackTarget(screen) }) {
-            RegisteredCampsitesScreen(
-                ownerId = ownerId,
-                onCampsiteClick = { campsite ->
-                    selectedCampsite = campsite
-                    screen = "details"
-                }
-            )
+        "mine" -> {
+            WithBackArrow(onBack = { screen = ownerBackTarget(screen) }) {
+                RegisteredCampsitesScreen(
+                    ownerId = ownerId,
+                    onCampsiteClick = { campsite ->
+                        selectedCampsite = campsite
+                        screen = "details"
+                    }
+                )
+            }
         }
 
         "details" -> {
@@ -135,7 +141,11 @@ fun OwnerScreens(ownerId: String, onSignOut: () -> Unit) {
                         onSave = { point, _ ->
                             showLocationPicker = false
                             locationMessage = "Saving..."
-                            CampsiteRepository.updateLocation(chosen.getId(), point.latitude, point.longitude) { worked ->
+                            updateLocation(
+                                chosen.getId(),
+                                point.latitude,
+                                point.longitude
+                            ) { worked ->
                                 if (worked) {
                                     // Reload, so the map on the card shows the new pin
                                     CampsiteRepository.getById(chosen.getId()) { updated ->
@@ -163,16 +173,22 @@ fun OwnerScreens(ownerId: String, onSignOut: () -> Unit) {
         "createLottery" -> {
             if (chosen != null) {
                 WithBackArrow(onBack = { screen = ownerBackTarget(screen) }) {
-                    CreateLotteryScreen(campsiteId = chosen.getId(), campsiteName = chosen.getCampsiteName())
+                    CreateLotteryScreen(
+                        campsiteId = chosen.getId(),
+                        campsiteName = chosen.getCampsiteName(),
+                        ownerId = ownerId
+                    )
                 }
             }
         }
 
-        else -> OwnerHomeScreenUI(
-            onSignOut = onSignOut,
-            onRegisterClick = { screen = "register" },
-            onMyCampsitesClick = { screen = "mine" }
-        )
+        else -> {
+            OwnerHomeScreenUI(
+                onSignOut = onSignOut,
+                onRegisterClick = { screen = "register" },
+                onMyCampsitesClick = { screen = "mine" }
+            )
+        }
     }
 }
 
