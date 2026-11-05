@@ -220,7 +220,7 @@ fun datesText(ranges: List<Map<String, String>>): String {
 }
 
 // Preview of a full card and a bare one
-@Preview(showBackground = true, backgroundColor = 0xFF526B0D)
+@Preview(showBackground = true, backgroundColor = 0xFF566C11)
 @Composable
 private fun CampsiteDescriptionCardPreview() {
     val full = CampsiteModel(
