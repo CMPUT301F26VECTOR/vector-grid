@@ -11,6 +11,17 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Project_halfway">
+
+        <!-- Google Maps SDK key. The value comes from MAPS_API_KEY in local.properties. -->
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="${MAPS_API_KEY}" />
+
+        <!-- Needed by the Maps SDK on newer Android versions -->
+        <uses-library
+            android:name="org.apache.http.legacy"
+            android:required="false" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -25,6 +36,14 @@
         </activity>
 
         <activity android:name=".EntrantHomeScreenClass"
+            android:exported="false"/>
+
+        <!-- Parneet: entrant profile page (US 01.07.03) -->
+        <activity android:name=".EntrantProfileActivity"
+            android:exported="false"/>
+
+        <!-- Parneet: My Reservations & Entries, Waitlisted tab (US 01.02.01, 01.02.02) -->
+        <activity android:name=".MyEntriesActivity"
             android:exported="false"/>
     </application>
 

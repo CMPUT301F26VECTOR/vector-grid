@@ -3,10 +3,14 @@ package com.example.project_halfway
 /**
  * Model for one campsite listing.
  * Holds the campsite's data, read through the getter functions.
- * Latitude and longitude come from the owner's map pin (US 02.01.02).
+ * Latitude and longitude come from the pin the owner drops on a Google Map
+ * (US 02.01.02); both are 0.0 when there is no pin (see hasMapLocation).
  * Saving and loading is done in CampsiteRepository.
  *
  * Outstanding issues: image upload is not built yet.
+ *
+ * @property availableDateRanges the dates the campsite can be booked, as maps
+ * with "start" and "end" in YYYY-MM-DD form (not lottery registration dates)
  */
 class CampsiteModel (
     private val campsiteName : String,
@@ -15,22 +19,23 @@ class CampsiteModel (
     private val longitude: Double,
     private val latitude: Double,
     private val occupancy: Int,
-    private val userRating: Double,
+    private val userRating: Double = 0.0,
     private val description: String,
     private val imageUrl : String,
 
     // New fields. Each has a default so existing code that creates a
     // CampsiteModel with the original nine values still compiles.
-    val id: String = "",
-    val ownerId: String = "",
-    val type: String = "",
-    val services: List<String> = emptyList(),
-    
-    val pricePerNight: Double = 0.0,
-   // Available campsite dates, not lottery registration dates.
-    val availableDateRanges: List<Map<String, String>> = emptyList()
-   
-    
+    private val id: String = "",
+    private val ownerId: String = "",
+    private val type: String = "",
+    private val services: List<String> = emptyList(),
+    private val pricePerNight: Double = 0.0,
+
+    // Available campsite dates, not lottery registration dates.
+    private val availableDateRanges: List<Map<String, String>> = emptyList(),
+
+    // Short labels the owner picks, e.g. "Lakeside", "Pet friendly" (US 02.01.02).
+    private val tags: List<String> = emptyList()
 ) {
     /** Returns the average rating given by users. */
     public fun getUserRating() : Double {
@@ -69,4 +74,60 @@ class CampsiteModel (
     public fun getLongitude() : Double {
         return longitude
     }
+
+    //Added extra getters for detailed view
+    /** Returns the campsite's Firestore document id, or "" if it hasn't been saved yet. */
+    public fun getId() : String {
+        return id
+    }
+
+    /** Returns the user id of the owner who listed the campsite. */
+    public fun getOwnerId() : String {
+        return ownerId
+    }
+
+    /** Returns the kind of site, for example "Tent site". */
+    public fun getType() : String {
+        return type
+    }
+
+    /** Returns the services the site offers, for example "Power" or "Non-potable water". */
+    public fun getServices() : List<String> {
+        return services
+    }
+
+    /** Returns the price per night in dollars. It is 0.0 if the owner didn't set one. */
+    public fun getPricePerNight() : Double {
+        return pricePerNight
+    }
+
+    /** Returns the owner's tags for this campsite, e.g. "Lakeside". Empty if none. */
+    public fun getTags() : List<String> {
+        return tags
+    }
+
+    /** Returns a string that contains all the ranges in which a campsite is available to be
+     * booked. This depends on the map keys in availableDateRanges being called "start"
+     * and "end". Returns "No available dates found." if list is empty. */
+    public fun getAvailableDateRangesString() : String {
+        if (availableDateRanges.isEmpty()) return "No available dates found."
+        return availableDateRanges.joinToString(", ") { "${it["start"]} - ${it["end"]}" }
+    }
+
+    /** Returns availableDateRanges attribute. */
+    public fun getAvailableDateRanges() : List<Map<String, String>> {
+        return availableDateRanges
+    }
+
+    /**
+     * Tells whether the owner has put this campsite on the map. A campsite saved
+     * without a map pin has latitude and longitude both 0.0, so that counts as no
+     * location (no real campsite is at 0, 0, which is in the Atlantic Ocean).
+     *
+     * @return true if the campsite has a map location
+     */
+    public fun hasMapLocation() : Boolean {
+        return latitude != 0.0 || longitude != 0.0
+    }
+
 }

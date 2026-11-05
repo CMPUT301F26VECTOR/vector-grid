@@ -2,6 +2,8 @@
 package com.example.project_halfway
 
 import android.R
+import android.content.Intent
+import androidx.compose.foundation.layout.statusBarsPadding
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -51,7 +53,15 @@ private val HomeGreen = Color(0xFF526B0D)
  *
  * Shows a welcome message, profile icon and Browse Campsites card.
  * Calls onBrowseClick when the user selects the card.
+ * The entrant can also edit their name, email and phone number, or delete
+ * their profile (US 01.07.03).
  *
+ * The profile icon opens the profile page (EntrantProfileActivity).
+ *
+ * Outstanding issues: none known.
+ *
+ * @param onExit called when SIGNOUT is pressed
+ * @param onBrowseClick called when the Browse Campsites card is pressed
  */
 @Composable
 fun EntrantHomeScreenUI(
@@ -152,13 +162,14 @@ fun EntrantHomeScreenUI(
     }
 
     if (viewPolicyGuidelines){
-        AppPolicyandGuidelines (onBack={viewPolicyGuidelines = false})
+        AppPolicyAndGuidelines (onBack={viewPolicyGuidelines = false})
     }
     else{
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(HomeGreen)
+            .statusBarsPadding()
             .padding(20.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -176,12 +187,16 @@ fun EntrantHomeScreenUI(
                 fontWeight = FontWeight.Bold,
                 color = Color.White
             )
-            // TODO (Parneet): Connect the profile icon to the user's profile screen and the updating profile info (17th screen in entrant ui)
+            // US 01.07.03 - profile icon opens the profile page (EntrantProfileActivity)
             Icon(
                 imageVector = Icons.Outlined.AccountCircle,
                 contentDescription = "Profile",
                 tint = Color.White,
-                modifier = Modifier.size(36.dp)
+                modifier = Modifier
+                    .size(36.dp)
+                    .clickable {
+                        context.startActivity(Intent(context, EntrantProfileActivity::class.java))
+                    }
             )
         }
         Spacer(modifier = Modifier.height(2.dp))
@@ -347,6 +362,35 @@ fun EntrantHomeScreenUI(
             modifier = Modifier.fillMaxWidth()){
             Text(text = "App Policy and Guidelines",
                 fontSize = 18.sp)
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+        // Card for opening My Reservations & Entries (Waitlisted tab, US 01.02.01, 01.02.02)
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(100.dp)
+                .clickable {
+                    context.startActivity(Intent(context, MyEntriesActivity::class.java))
+                },
+            shape = RoundedCornerShape(6.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = Color.White
+            )
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    text = "My Reservations & Entries",
+                    fontSize = 17.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black
+                )
+                Text(
+                    text = "See the waitlists you joined",
+                    fontSize = 13.sp,
+                    color = Color.Gray
+                )
+            }
         }
 
         Spacer(modifier = Modifier.weight(1f))
