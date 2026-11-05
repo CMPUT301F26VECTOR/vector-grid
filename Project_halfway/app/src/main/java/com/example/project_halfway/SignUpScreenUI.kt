@@ -147,8 +147,12 @@ fun SignUpScreen (
                 val ownerFirstName =firstName.trim()
                 val ownerLastName = lastName.trim()
                 val ownerEmail = Email.trim()
+<<<<<<< Updated upstream
 
                 //OpenAI ChatGPT was used here for this implementation of firebase 2026-10-24
+=======
+//OpenAI ChatGPT was used here for this implementation of firebase 2026-10-24
+>>>>>>> Stashed changes
                 //"Provide the firebase syntax for creating a user and aslo how to add listeners"
                 FirebaseSecurity.ownerAuth.createUserWithEmailAndPassword(Email.trim(),password)
                     .addOnCompleteListener { task ->

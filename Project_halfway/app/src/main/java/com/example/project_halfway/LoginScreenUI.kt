@@ -1,4 +1,7 @@
+<<<<<<< Updated upstream
 
+=======
+>>>>>>> Stashed changes
 package com.example.project_halfway
 
 import android.content.Intent
@@ -53,7 +56,24 @@ fun LoginScreenUI (
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment =Alignment.CenterHorizontally
     ){
+<<<<<<< Updated upstream
         Spacer(modifier = Modifier.height(150.dp))
+=======
+        // Back arrow: returns to the welcome screen
+        IconButton(
+            onClick = onBackClick,
+            modifier = Modifier.align(Alignment.Start).padding(top = 24.dp, start = 8.dp)
+        ) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                contentDescription = "Back",
+                tint = Color(0xff566C11)
+            )
+        }
+        Spacer(modifier = Modifier.height(78.dp))
+        //this part of code was made with ChatGPT 2026-10-21
+        //"how" can i improve this font style
+>>>>>>> Stashed changes
         Text(text ="Campsite\nReservation\nSystem",
             fontWeight = FontWeight.Thin,
             fontFamily = FontFamily.SansSerif,
