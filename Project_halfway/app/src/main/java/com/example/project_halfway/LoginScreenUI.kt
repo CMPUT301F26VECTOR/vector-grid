@@ -169,6 +169,7 @@
 package com.example.project_halfway
 
 import android.content.Intent
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -180,12 +181,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -206,21 +209,48 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
+/**
+ * The campsite owner login screen: email and password, SIGN IN and
+ * Create Account. Signs in through FirebaseSecurity.ownerAuth.
+ *
+ * Outstanding issues: Create Account opens EntrantHomeScreenClass (the owner
+ * sign-up screen) as a separate activity instead of going through AuthGate.
+ * The old commented-out version at the top of the file could be removed.
+ *
+ * @param onLoginSuccess called after the owner signs in successfully
+ * @param onBackClick called when the back arrow (or the phone's back button)
+ * is pressed, to return to the welcome screen
+ */
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun LoginScreenUI (
-    onLoginSuccess: () -> Unit = {}
+    onLoginSuccess: () -> Unit = {},
+    onBackClick: () -> Unit = {}
 ) {
     var Email by remember{ mutableStateOf("") }
     var Password by remember {mutableStateOf("")}
     var loginMessage by remember{mutableStateOf("")}
     val context  = LocalContext.current
 
+    // The phone's back button/gesture does the same as the back arrow
+    BackHandler(onBack = onBackClick)
+
     Column(
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment =Alignment.CenterHorizontally
     ){
-        Spacer(modifier = Modifier.height(150.dp))
+        // Back arrow: returns to the welcome screen
+        IconButton(
+            onClick = onBackClick,
+            modifier = Modifier.align(Alignment.Start).padding(top = 24.dp, start = 8.dp)
+        ) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                contentDescription = "Back",
+                tint = Color(0xff566C11)
+            )
+        }
+        Spacer(modifier = Modifier.height(78.dp))
         Text(text ="Campsite\nReservation\nSystem",
             fontWeight = FontWeight.Thin,
             fontFamily = FontFamily.SansSerif,
