@@ -29,7 +29,7 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
 
-private val BrowseGreen = Color(0xFF526B0D)
+private val BrowseGreen = Color(0xFF566C11)
 
 /**
  * Displays campsite listings with search and filtering.
