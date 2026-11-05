@@ -12,6 +12,7 @@ import androidx.compose.ui.test.performTextInput
 import org.junit.Test
 import org.junit.Rule
 import org.junit.runner.RunWith
+import java.util.UUID
 
 
 @RunWith(AndroidJUnit4::class)
@@ -72,6 +73,7 @@ class CampsiteOwnerLogin{
     //PLEASE CHANGE THIS EMAIL TO RUN THE TEST FOR THIS FUCNTION
     @Test
     fun testingCreateAccount(){
+        val email_created = "campsiteOwner${UUID.randomUUID()}@hmail.com"
         composeTestRule
             .onNodeWithText("Entrant")
             .assertIsDisplayed()
@@ -105,7 +107,7 @@ class CampsiteOwnerLogin{
         //PLEASE CHANGE THIS EMAIL TO RUN THE TEST//
         composeTestRule
             .onNodeWithText("Email")
-            .performTextInput("baldev@gmail.com")
+            .performTextInput(email_created)
 
 
         composeTestRule
