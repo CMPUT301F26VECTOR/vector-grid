@@ -39,8 +39,7 @@ import androidx.compose.ui.unit.dp
  * back button go one step back, as ownerBackTarget says.
  *
  * Outstanding issues: which screen is open is kept in memory only, so turning
- * the phone or restarting the app returns to the owner home. The owner home
- * itself is still the placeholder layout in OwnerHomeScreenUI.
+ * the phone or restarting the app returns to the owner home.
  *
  * @param ownerId user id of the signed in owner; saved on new campsites and
  * used to load My Campsites
@@ -72,9 +71,11 @@ fun OwnerScreens(ownerId: String, onSignOut: () -> Unit) {
     val chosen = selectedCampsite
 
     when (screen) {
-        "register" -> WithBackArrow(onBack = { screen = ownerBackTarget(screen) }) {
-            RegisterCampsiteScreen(ownerId = ownerId)
-        }
+        // Register Campsite draws its own green header with the back arrow
+        "register" -> RegisterCampsiteScreen(
+            ownerId = ownerId,
+            onBackClick = { screen = ownerBackTarget(screen) }
+        )
 
         "mine" -> WithBackArrow(onBack = { screen = ownerBackTarget(screen) }) {
             RegisteredCampsitesScreen(
