@@ -72,12 +72,14 @@ data class LotterySettings(
      * @param campsiteId id of the campsite the lottery is for
      * @param id Firestore id; leave empty so LotteryRepository.save makes a new one
      * @param zone the owner's time zone
+     * @param campsiteIds ids of every campsite in the lottery; the first is the main one
      * @return a new Lottery with an empty waiting list
      */
     fun toLottery(
         campsiteId: String,
         id: String = "",
-        zone: ZoneId = ZoneId.systemDefault()
+        zone: ZoneId = ZoneId.systemDefault(),
+        campsiteIds: List<String> = listOf(campsiteId)
     ): Lottery {
         val capacityText = waitlistCapacity.trim()
         return Lottery(
@@ -88,7 +90,8 @@ data class LotterySettings(
             numberOfWinners = numberOfWinners.trim().toIntOrNull() ?: 0,
             bookingStartDate = bookingStart ?: 0L,
             bookingEndDate = bookingEnd ?: 0L,
-            waitlistCapacity = if (capacityText.isEmpty()) null else capacityText.toIntOrNull() ?: 0
+            waitlistCapacity = if (capacityText.isEmpty()) null else capacityText.toIntOrNull() ?: 0,
+            campsiteIds = campsiteIds
         )
     }
 

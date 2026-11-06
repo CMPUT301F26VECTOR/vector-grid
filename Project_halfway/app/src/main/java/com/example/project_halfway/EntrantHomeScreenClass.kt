@@ -59,7 +59,9 @@ class EntrantHomeScreenClass : ComponentActivity() {
                     SignUpScreen(
                         onSignUpSuccess = {
                             showOwnerHome = true
-                        }
+                        },
+                        // Back to the owner login screen underneath
+                        onBackClick = { finish() }
                     )
                 }
             }

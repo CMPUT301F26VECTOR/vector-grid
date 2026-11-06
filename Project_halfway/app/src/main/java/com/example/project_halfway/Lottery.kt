@@ -9,21 +9,19 @@ import kotlin.random.Random
 /**
  * Model for a campsite lottery.
  *
- * An owner opens a lottery for one campsite for a period of time (startDate to endDate).
+ * An owner opens a lottery for one or more campsites for a period of time (startDate to endDate).
  * While it is open, entrants can join or leave its waiting list.
  * After it ends, winners are drawn at random from the waiting list.
  *
  * Used for US 01.01.06, US 01.02.01, US 01.02.02, US 02.04.03, US 02.04.04,
- * US 02.04.05, US 02.04.07 and US 02.05.01.
+ * US 02.04.05, US 02.04.07, US 02.04.02 and US 02.05.01.
  *
- * Outstanding issues: the owner screen for creating a lottery is not done yet
- * (US 02.04.01, 02.04.02), so for now test lotteries are added by hand in the
- * Firestore console. That screen can check the owner's choices with
- * firstSettingsError(). Winners and non-winners are recorded but not notified
- * yet (US 01.03.01, 01.03.02).
+ * Outstanding issues: Winners can only reserve inside the booking period
+ * (isWithinBookingPeriod, US 02.04.04).
  *
  * @property id the Firestore document id of this lottery
- * @property campsiteId id of the campsite this lottery is for
+ * @property campsiteId id of the first campsite this lottery is for
+ * @property campsiteIds ids of every campsite in this lottery; the first one is also campsiteId (US 02.04.02)
  * @property startDate when registration opens, in milliseconds (US 02.04.03)
  * @property endDate when registration closes, in milliseconds (US 02.04.03)
  * @property numberOfWinners how many entrants the draw picks (US 02.04.05)
@@ -46,7 +44,8 @@ class Lottery(
     isDrawn: Boolean = false,
     val bookingStartDate: Long = 0L,
     val bookingEndDate: Long = 0L,
-    val waitlistCapacity: Int? = null
+    val waitlistCapacity: Int? = null,
+    campsiteIds: List<String> = listOf(campsiteId)
 ) {
     // ids of the entrants on the waiting list
     private val _waitingList = waitingList.toMutableList()
@@ -54,6 +53,9 @@ class Lottery(
     // results of the draw (both empty until the draw happens)
     private val _winners = winners.toMutableList()
     private val _notSelected = notSelected.toMutableList()
+
+    // ids of every campsite in this lottery (the first one is also campsiteId)
+    private val _campsiteIds = campsiteIds.toMutableList()
 
     /**
      * True once the winners have been drawn. Only drawWinners can change it.
@@ -78,6 +80,11 @@ class Lottery(
      */
     val waitingList: List<String>
         get() = _waitingList
+    /**
+     * Ids of every campsite offered in this lottery. Read only, use removeCampsite to change it.
+     */
+    val campsiteIds: List<String>
+        get() = _campsiteIds
 
     /**
      * Checks if the lottery is open right now.
@@ -204,6 +211,45 @@ class Lottery(
     }
 
     /**
+     * Checks if an entrant won this lottery's draw.
+     *
+     * @param entrantId the entrant's id
+     * @return true once the draw has happened and they are one of the winners
+     */
+    fun isWinner(entrantId: String): Boolean {
+        return isDrawn && _winners.contains(entrantId)
+    }
+
+    /**
+     * Checks that a winner's chosen stay is inside the booking period
+     * (US 02.04.04). Dates come from the calendar as midnight UTC, so whole
+     * days are compared. With no booking period set, any stay is allowed.
+     *
+     * @param stayStart the first night, in milliseconds (midnight UTC)
+     * @param stayEnd the last day, in milliseconds (midnight UTC)
+     * @return true if the stay starts and ends inside the booking period and
+     * doesn't end before it starts
+     */
+    fun isWithinBookingPeriod(stayStart: Long, stayEnd: Long): Boolean {
+        val start = calendarDay(stayStart)
+        val end = calendarDay(stayEnd)
+        if (end.isBefore(start)) return false
+        if (bookingStartDate <= 0L || bookingEndDate <= 0L) return true
+        return !start.isBefore(calendarDay(bookingStartDate)) && !end.isAfter(calendarDay(bookingEndDate))
+    }
+
+    /**
+     * Checks if one calendar day can be picked when reserving (US 02.04.04),
+     * so the calendar can grey out days outside the booking period.
+     *
+     * @param day a day from the calendar, in milliseconds (midnight UTC)
+     * @return true if it's inside the booking period, or there is no period
+     */
+    fun isBookableDay(day: Long): Boolean {
+        return isWithinBookingPeriod(day, day)
+    }
+
+    /**
      * Removes an entrant from the waiting list.
      *
      * @param entrantId the entrant's id
@@ -212,6 +258,25 @@ class Lottery(
     fun leaveWaitingList(entrantId: String): Boolean {
         return _waitingList.remove(entrantId)
     }
+
+    /**
+     * Takes a campsite out of the lottery (US 02.04.02). Only allowed before
+     * registration opens, and a lottery must keep at least one campsite.
+     *
+     * @param idToRemove the id of the campsite to remove
+     * @param now the current time in milliseconds
+     * @return true if it got removed, false if not
+     */
+    fun removeCampsite(idToRemove: String, now: Long): Boolean {
+        if (now >= startDate) {
+            return false
+        }
+        if (_campsiteIds.size <= 1) {
+            return false
+        }
+        return _campsiteIds.remove(idToRemove)
+    }
+
 
     /**
      * @return how many entrants are on the waiting list

@@ -56,8 +56,8 @@ import java.util.Locale
 /**
  * The full campsite details screen, styled like the mockup: a green "Details"
  * header with a back arrow, then a card with the campsite's rating, name,
- * location, a Google Map with the campsite's pin (with Directions and Open in
- * Google Maps buttons), description, services, price per night, a calendar
+ * location, the photo (when there is one), a Google Map with the campsite's
+ * pin (with Directions and Open in Google Maps buttons), rating, description, services, price per night, a calendar
  * and a Join lottery / Join waitlist button.
  *
  * Used for US 01.01.05 (view campsite details) and US 02.01.04 (owner views
@@ -68,8 +68,7 @@ import java.util.Locale
  * lottery (US 01.01.06), and the owner's screens put a View waitlist button
  * there. With no actionArea, the card shows its Join button.
  *
- * Outstanding issues: the calendar is not built yet, and the Join button on
- * its own only calls onJoinClick.
+ * Outstanding issues: the Join button on its own only calls onJoinClick.
  *
  * @param campsite the campsite to show
  * @param isLotteryActive true to show "Join lottery", false to show "Join waitlist"
@@ -135,6 +134,9 @@ fun CampsiteDetailedCard(
                     .padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
+                // The campsite's photo, if the owner has one (shows nothing otherwise)
+                CampsiteImage(url = campsite.getImageUrl(), modifier = Modifier.padding(bottom = 16.dp))
+
                 // Campsite & Campground Name
                 Text(
                     text = campsite.getCampsiteName() + " - " + campsite.getCampgroundName(),
@@ -169,6 +171,11 @@ fun CampsiteDetailedCard(
                 RatingStars(campsite)
 
                 Spacer(modifier = Modifier.height(20.dp))
+
+                // The owner's description of the campsite
+                CampsiteDescription(campsite.getDescription())
+
+                Spacer(modifier = Modifier.height(16.dp))
 
                 // Specifications
                 Column(
@@ -562,16 +569,18 @@ fun CampsiteMapSection(campsite: CampsiteModel) {
         ) {
             Button(
                 onClick = { GoogleMapsLinks.openDirections(context, position) },
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xff566C11)),
+                colors = greenButtonColors(),
                 modifier = Modifier.testTag("directions_button")
             ) {
                 Text("Directions")
             }
             OutlinedButton(
                 onClick = { GoogleMapsLinks.openPin(context, position) },
+                border = BorderStroke(1.dp, AppGreen),
+                colors = greenOutlinedButtonColors(),
                 modifier = Modifier.testTag("open_in_maps_button")
             ) {
-
+                Text("Open in Google Maps")
             }
         }
     }
