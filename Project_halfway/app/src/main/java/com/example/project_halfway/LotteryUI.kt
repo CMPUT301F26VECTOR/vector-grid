@@ -19,30 +19,29 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 
-// The lottery part of the campsite details screen.
-// US 01.01.06 - join an active lottery from the campsite details screen
-// US 01.02.01 - join the waiting list
-// US 01.02.02 - leave the waiting list
-//
-// LotterySection talks to Firestore, LotteryButton is just the looks
-// (split up so LotteryButton can be tested without Firebase).
-
 /**
- * Loads the active lottery for a campsite and lets the signed in entrant
- * join or leave its waiting list.
+ * The lottery part of the entrant's campsite details screen.
  *
- * Used for US 01.01.06, US 01.02.01 and US 01.02.02. Shown on the entrant's
- * campsite details: Browse puts it in CampsiteDetailedCard's action area.
+ * What it does:
+ * - Loads the campsite's open lottery, or says there isn't one.
+ * - Shows the days left and how many people are on the waiting list.
+ * - Lets the signed-in entrant join or leave the waiting list.
+ * - Shows a message after each join or leave.
  *
- * Outstanding issues: lotteries can only be added in the Firestore console
- * until the owner's create-lottery screen exists.
+ * Browse puts it in CampsiteDetailedCard's action area. It talks to Firestore;
+ * LotteryButton below only draws the info and buttons, so it can be tested on its own.
+ *
+ * Used for US 01.01.06 (join from the details screen), US 01.02.01 (join the
+ * waiting list) and US 01.02.02 (leave the waiting list).
+ *
+ * Outstanding issues: the count doesn't update if someone else joins or
+ * leaves while the screen is open.
  *
  * @param campsiteId id of the campsite being looked at
  */
 @Composable
 fun LotterySection(campsiteId: String) {
-    // the logged in user's id is used as the entrant id for now
-    // (will change once device login US 01.09.01 is merged)
+ 
     val entrantId = FirebaseSecurity.auth.currentUser?.uid ?: ""
 
     var lottery by remember { mutableStateOf<Lottery?>(null) }
@@ -88,7 +87,6 @@ fun LotterySection(campsiteId: String) {
                         count = current.getWaitingListSize()
                         message = "You joined the waiting list!"
                     } else {
-                        // undo it locally since firestore didn't save it
                         current.leaveWaitingList(entrantId)
                         message = "Could not join, try again"
                     }
@@ -115,13 +113,15 @@ fun LotterySection(campsiteId: String) {
 }
 
 /**
- * Shows the lottery info and the join / leave button.
- * Does not talk to Firestore, so it can be tested on its own.
+ * Shows the lottery info and the Join or Leave button (US 01.02.01, 01.02.02).
+ *
+ * Shows "Join Waiting List" if the entrant hasn't joined, and "Leave Waiting List"
+ * if they have. It has no Firestore code, so it is tested on its own (LotteryButtonTest).
  *
  * @param isOnWaitingList true if the entrant already joined
- * @param waitingListSize how many people joined
- * @param daysLeft days until the lottery closes
- * @param message feedback text shown under the button
+ * @param waitingListSize how many people are on the waiting list
+ * @param daysLeft full days until registration closes
+ * @param message text shown under the button, or "" for none
  * @param onJoin called when Join is pressed
  * @param onLeave called when Leave is pressed
  */
@@ -162,7 +162,6 @@ fun LotteryButton(
     }
 }
 
-/** Android Studio preview of LotteryButton for an entrant who hasn't joined yet. */
 @Preview(showBackground = true)
 @Composable
 fun LotteryButtonPreview() {
