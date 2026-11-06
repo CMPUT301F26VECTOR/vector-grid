@@ -84,13 +84,13 @@ class CampsiteTapTest {
     }
 
     @Test
-    fun summaryCard_noRatingYet_saysNew() {
+    fun summaryCard_noRatingYet_saysNoRatingsYet() {
         composeRule.setContent {
-            // makeCampsite gives a rating of 0.0, which means no ratings yet
+            // makeCampsite has no entrant ratings, so there is no average yet (US 01.01.04)
             CampsiteDescriptionCard(makeCampsite("camp_012", "Site 12"))
         }
 
-        composeRule.onNodeWithTag("rating_text", useUnmergedTree = true).assertTextEquals("New")
+        composeRule.onNodeWithTag("rating_text", useUnmergedTree = true).assertTextEquals("No ratings yet")
     }
 
     @Test

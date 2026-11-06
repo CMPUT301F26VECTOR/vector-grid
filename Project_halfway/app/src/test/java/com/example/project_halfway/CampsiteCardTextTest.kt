@@ -21,8 +21,14 @@ class CampsiteCardTextTest {
     )
 
     @Test
-    fun ratingText_noRatingIsNew() {
-        assertEquals("New", ratingText(0.0))
+    fun ratingText_noRatingSaysNoRatingsYet() {
+        assertEquals("No ratings yet", ratingText(0.0))
+    }
+
+    @Test
+    fun ratingCountText_singularAndPlural() {
+        assertEquals("1 rating", ratingCountText(1))
+        assertEquals("3 ratings", ratingCountText(3))
     }
 
     @Test

@@ -4,11 +4,13 @@ import com.google.firebase.Timestamp
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.Source
+import com.google.firebase.firestore.Filter
 
 /**
  * Saves and loads lotteries in the Firestore "lotteries" collection.
  * Each lottery document looks like this:
  *   campsiteId : "abc123"
+ *  campsiteIds: ["abc123", "def456"]  (every campsite in the lottery, US 02.04.02)
  *   startDate  : timestamp (or a number in milliseconds)
  *   endDate    : timestamp (or a number in milliseconds)
  *   waitingList: ["entrantUid1", "entrantUid2", ...]
@@ -27,10 +29,14 @@ import com.google.firebase.firestore.Source
  *
  * Entrant-side functions use FirebaseSecurity.db (the entrant's login).
  * The owner-side functions added for US 02.05.01 and 02.09.01
- * (getLotteriesForCampsite, drawIfDue, getEntrantNames) use ownerDb.
+ * (getLotteriesForCampsite, drawIfDue, getEntrantNames) and for US 02.04.02
+ * (updateCampsites) use ownerDb.
+ *
+ * When the draw happens it also writes a "won" or "notSelected" notification
+ * for every entrant (LotteryResultNotification, US 02.05.01).
  *
  * Outstanding issues: no delete yet. Lotteries are created through save from
- * CreateLotteryScreen, which is test-only until Mejida's screen replaces it.
+ * CreateLotteryScreen (US 02.04.01, US 02.04.02).
  * The draw runs when the owner opens the lottery's waitlist screen after
  * registration closes, not on a server timer (see drawIfDue).
  */
@@ -68,7 +74,12 @@ object LotteryRepository {
      * Gives back null if there is none (or if loading failed).
      */
     fun getActiveLottery(campsiteId: String, onResult: (Lottery?) -> Unit) {
-        lotteries().whereEqualTo("campsiteId", campsiteId).get()
+        lotteries().where(
+            Filter.or(
+                Filter.equalTo("campsiteId", campsiteId),
+                Filter.arrayContains("campsiteIds", campsiteId)
+            )
+        ).get()
             .addOnSuccessListener { result ->
                 val now = System.currentTimeMillis()
                 var active: Lottery? = null
@@ -182,11 +193,68 @@ object LotteryRepository {
     }
 
     /**
+     * Loads one lottery through the entrant's login, for example so a winner
+     * can see its booking period (US 02.04.04).
+     *
+     * @param lotteryId the lottery's id
+     * @param onResult gets the lottery, or null if it couldn't be loaded
+     */
+    fun getById(lotteryId: String, onResult: (Lottery?) -> Unit) {
+        lotteries().document(lotteryId).get()
+            .addOnSuccessListener { document ->
+                val data = document.data
+                onResult(if (data == null) null else fromMap(document.id, data))
+            }
+            .addOnFailureListener {
+                println("Load lottery failed: ${it.message}")
+                onResult(null)
+            }
+    }
+
+    /**
+     * Takes an entrant off every lottery waiting list they are on, used when
+     * they delete their profile (US 01.08.01). All the changes are sent
+     * together in one batch.
+     *
+     * @param entrantId the entrant's id
+     * @param onDone gets true once every list is updated (or there were none),
+     * false if loading or saving failed
+     */
+    fun removeFromAllWaitingLists(entrantId: String, onDone: (Boolean) -> Unit) {
+        lotteries().whereArrayContains("waitingList", entrantId).get()
+            .addOnSuccessListener { result ->
+                if (result.isEmpty) {
+                    onDone(true)
+                    return@addOnSuccessListener
+                }
+                val batch = FirebaseSecurity.db.batch()
+                for (document in result.documents) {
+                    batch.update(document.reference, "waitingList", FieldValue.arrayRemove(entrantId))
+                }
+                batch.commit()
+                    .addOnSuccessListener { onDone(true) }
+                    .addOnFailureListener {
+                        println("Removing from waiting lists failed: ${it.message}")
+                        onDone(false)
+                    }
+            }
+            .addOnFailureListener {
+                println("Loading the entrant's waiting lists failed: ${it.message}")
+                onDone(false)
+            }
+    }
+
+    /**
      * Loads every lottery for a campsite, open or closed (for the owner's screens).
      * Gives back an empty list if there are none (or if loading failed).
      */
     fun getLotteriesForCampsite(campsiteId: String, onResult: (List<Lottery>) -> Unit) {
-        ownerLotteries().whereEqualTo("campsiteId", campsiteId).get()
+        ownerLotteries().where(
+            Filter.or(
+                Filter.equalTo("campsiteId", campsiteId),
+                Filter.arrayContains("campsiteIds", campsiteId)
+            )
+        ).get()
             .addOnSuccessListener { result ->
                 val list = mutableListOf<Lottery>()
                 for (document in result.documents) {
@@ -200,6 +268,30 @@ object LotteryRepository {
             .addOnFailureListener {
                 println("Load lotteries failed: ${it.message}")
                 onResult(emptyList())
+            }
+    }
+
+    /**
+     * Saves the list of campsites a lottery is for (US 02.04.02), for example after
+     * the owner removes one. Only the campsite fields are written, so the waiting
+     * list and the draw are left as they are.
+     *
+     * @param lotteryId the Firestore id of the lottery
+     * @param campsiteIds the campsites the lottery has now; the first is the main one
+     * @param onDone gets true once Firestore has saved it, or false if it failed
+     */
+    fun updateCampsites(lotteryId: String, campsiteIds: List<String>, onDone: (Boolean) -> Unit) {
+        ownerLotteries().document(lotteryId)
+            .update(
+                mapOf(
+                    "campsiteId" to (campsiteIds.firstOrNull() ?: ""),
+                    "campsiteIds" to campsiteIds
+                )
+            )
+            .addOnSuccessListener { onDone(true) }
+            .addOnFailureListener {
+                println("Update campsites failed: ${it.message}")
+                onDone(false)
             }
     }
 
@@ -224,7 +316,8 @@ object LotteryRepository {
                 null
             } else {
                 val lottery = fromMap(snapshot.id, data)
-                if (lottery.drawWinners(System.currentTimeMillis())) {
+                val now = System.currentTimeMillis()
+                if (lottery.drawWinners(now)) {
                     // only write the draw fields, so nothing else in the document is touched
                     transaction.update(
                         document,
@@ -234,6 +327,14 @@ object LotteryRepository {
                             "drawn" to true
                         )
                     )
+                    // US 02.05.01: tell every entrant whether they won. These are written in
+                    // the same transaction, so a lottery is never drawn without them.
+                    for (notification in LotteryResultNotification.forDraw(lottery, now)) {
+                        transaction.set(
+                            FirebaseSecurity.ownerDb.collection("notifications").document(),
+                            LotteryResultNotification.toMap(notification)
+                        )
+                    }
                 }
                 lottery
             }
@@ -295,7 +396,8 @@ object LotteryRepository {
      */
     fun toMap(lottery: Lottery): Map<String, Any> {
         val map = mutableMapOf<String, Any>(
-            "campsiteId" to lottery.campsiteId,
+            "campsiteId" to (lottery.campsiteIds.firstOrNull() ?: lottery.campsiteId),
+            "campsiteIds" to lottery.campsiteIds,
             "startDate" to lottery.startDate,
             "endDate" to lottery.endDate,
             "waitingList" to lottery.waitingList,
@@ -327,6 +429,8 @@ object LotteryRepository {
      */
     fun fromMap(id: String, m: Map<String, Any>): Lottery {
         val campsiteId = m["campsiteId"] as? String ?: ""
+        // Newer lotteries list every campsite; older ones only have campsiteId.
+        val campsiteIds = readIds(m["campsiteIds"]).ifEmpty { listOf(campsiteId) }
 
         val list = mutableListOf<String>()
         val value = m["waitingList"]
@@ -344,7 +448,7 @@ object LotteryRepository {
 
         return Lottery(
             id = id,
-            campsiteId = campsiteId,
+            campsiteId = campsiteIds.first(),
             startDate = readDate(m["startDate"]),
             endDate = readDate(m["endDate"]),
             waitingList = list,
@@ -355,7 +459,8 @@ object LotteryRepository {
             bookingStartDate = readDate(m["bookingStartDate"]),
             bookingEndDate = readDate(m["bookingEndDate"]),
             // 0 or less (e.g. typed in the console) would block everyone, so treat it as no limit
-            waitlistCapacity = if (capacity is Number && capacity.toInt() > 0) capacity.toInt() else null
+            waitlistCapacity = if (capacity is Number && capacity.toInt() > 0) capacity.toInt() else null,
+            campsiteIds = campsiteIds
         )
     }
 

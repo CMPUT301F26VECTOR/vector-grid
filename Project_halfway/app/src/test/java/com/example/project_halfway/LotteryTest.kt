@@ -114,4 +114,34 @@ class LotteryTest {
         assertEquals(5, openLottery().getDaysLeft(today))
         assertEquals(0, closedLottery().getDaysLeft(today))
     }
+
+    @Test
+    fun removeCampsite_beforeRegistrationOpens_removesIt() {
+        val lottery = Lottery(
+            id = "l1", campsiteId = "a", startDate = 1000L, endDate = 2000L,
+            campsiteIds = listOf("a", "b")
+        )
+
+        assertTrue(lottery.removeCampsite("b", now = 500L))
+        assertEquals(listOf("a"), lottery.campsiteIds)
+    }
+
+    @Test
+    fun removeCampsite_afterRegistrationOpens_isRefused() {
+        val lottery = Lottery(
+            id = "l1", campsiteId = "a", startDate = 1000L, endDate = 2000L,
+            campsiteIds = listOf("a", "b")
+        )
+
+        assertFalse(lottery.removeCampsite("b", now = 1500L))
+        assertEquals(listOf("a", "b"), lottery.campsiteIds)
+    }
+
+    @Test
+    fun removeCampsite_lastOne_isRefused() {
+        val lottery = Lottery(id = "l1", campsiteId = "a", startDate = 1000L, endDate = 2000L)
+
+        assertFalse(lottery.removeCampsite("a", now = 500L))
+        assertEquals(listOf("a"), lottery.campsiteIds)
+    }
 }

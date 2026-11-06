@@ -25,11 +25,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
+import com.example.project_halfway.CampsiteRepository.updateLocation
+
 
 /**
  * Shows whichever campsite owner screen is open and moves between them: the
  * owner home, Register Campsite (US 02.01.01, US 02.01.02), My Campsites
- * (US 02.03.01), one campsite's details (US 02.01.04), changing its map
+ * (US 02.03.01), one campsite's details and editing them (US 02.01.04), changing its map
  * location with LocationPickerDialog (US 02.01.03), its lottery's
  * waitlist and winners (US 02.05.01, US 02.09.01) and Create Lottery
  * (US 02.04.01, US 02.04.03, US 02.04.04, US 02.04.05, US 02.04.07).
@@ -39,8 +41,7 @@ import androidx.compose.ui.unit.dp
  * back button go one step back, as ownerBackTarget says.
  *
  * Outstanding issues: which screen is open is kept in memory only, so turning
- * the phone or restarting the app returns to the owner home. The owner home
- * itself is still the placeholder layout in OwnerHomeScreenUI.
+ * the phone or restarting the app returns to the owner home.
  *
  * @param ownerId user id of the signed in owner; saved on new campsites and
  * used to load My Campsites
@@ -49,12 +50,12 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun OwnerScreens(ownerId: String, onSignOut: () -> Unit) {
 
-    // Which owner screen is open: "home", "register", "mine", "details", "waitlist"
-    // or "createLottery"
+    // Which owner screen is open: "home", "register", "mine", "details", "edit",
+    // "waitlist" or "createLottery"
     var screen by remember { mutableStateOf("home") }
 
     // The campsite the owner tapped in My Campsites (used by "details", "waitlist"
-    // and "createLottery")
+    // "createLottery" or "lotteryCampsites")
     var selectedCampsite by remember { mutableStateOf<CampsiteModel?>(null) }
 
     // true while the "Change location" map pop-up is open on the details screen
@@ -72,18 +73,22 @@ fun OwnerScreens(ownerId: String, onSignOut: () -> Unit) {
     val chosen = selectedCampsite
 
     when (screen) {
-        "register" -> WithBackArrow(onBack = { screen = ownerBackTarget(screen) }) {
-            RegisterCampsiteScreen(ownerId = ownerId)
-        }
+        // Register Campsite draws its own green header with the back arrow
+        "register" -> RegisterCampsiteScreen(
+            ownerId = ownerId,
+            onBackClick = { screen = ownerBackTarget(screen) }
+        )
 
-        "mine" -> WithBackArrow(onBack = { screen = ownerBackTarget(screen) }) {
-            RegisteredCampsitesScreen(
-                ownerId = ownerId,
-                onCampsiteClick = { campsite ->
-                    selectedCampsite = campsite
-                    screen = "details"
-                }
-            )
+        "mine" -> {
+            WithBackArrow(onBack = { screen = ownerBackTarget(screen) }) {
+                RegisteredCampsitesScreen(
+                    ownerId = ownerId,
+                    onCampsiteClick = { campsite ->
+                        selectedCampsite = campsite
+                        screen = "details"
+                    }
+                )
+            }
         }
 
         "details" -> {
@@ -104,11 +109,27 @@ fun OwnerScreens(ownerId: String, onSignOut: () -> Unit) {
                                 Text("View waitlist and winners")
                             }
                             Spacer(modifier = Modifier.height(8.dp))
+                            // US 02.01.04: edit the campsite's details
+                            OutlinedButton(
+                                onClick = { screen = "edit" },
+                                modifier = Modifier.testTag("edit_campsite_button")
+                            ) {
+                                Text("Edit details", color = Color(0xff566C11))
+                            }
+                            Spacer(modifier = Modifier.height(8.dp))
                             OutlinedButton(
                                 onClick = { screen = "createLottery" },
                                 modifier = Modifier.testTag("create_lottery_button")
                             ) {
                                 Text("Create lottery", color = Color(0xff566C11))
+                            }
+
+                            Spacer(modifier = Modifier.height(8.dp))
+                            OutlinedButton(
+                                onClick = { screen = "lotteryCampsites" },
+                                modifier = Modifier.testTag("manage_lottery_campsites_button")
+                            ) {
+                                Text("Manage lottery campsites", color = Color(0xff566C11))
                             }
                             Spacer(modifier = Modifier.height(8.dp))
                             OutlinedButton(
@@ -135,7 +156,11 @@ fun OwnerScreens(ownerId: String, onSignOut: () -> Unit) {
                         onSave = { point, _ ->
                             showLocationPicker = false
                             locationMessage = "Saving..."
-                            CampsiteRepository.updateLocation(chosen.getId(), point.latitude, point.longitude) { worked ->
+                            updateLocation(
+                                chosen.getId(),
+                                point.latitude,
+                                point.longitude
+                            ) { worked ->
                                 if (worked) {
                                     // Reload, so the map on the card shows the new pin
                                     CampsiteRepository.getById(chosen.getId()) { updated ->
@@ -152,6 +177,21 @@ fun OwnerScreens(ownerId: String, onSignOut: () -> Unit) {
             }
         }
 
+        // US 02.01.04: the Register Campsite form, filled in with this campsite
+        "edit" -> {
+            if (chosen != null) {
+                RegisterCampsiteScreen(
+                    ownerId = ownerId,
+                    existing = chosen,
+                    onBackClick = { screen = ownerBackTarget(screen) },
+                    onSaved = { updated ->
+                        selectedCampsite = updated
+                        screen = "details"
+                    }
+                )
+            }
+        }
+
         "waitlist" -> {
             if (chosen != null) {
                 WithBackArrow(onBack = { screen = ownerBackTarget(screen) }) {
@@ -163,24 +203,38 @@ fun OwnerScreens(ownerId: String, onSignOut: () -> Unit) {
         "createLottery" -> {
             if (chosen != null) {
                 WithBackArrow(onBack = { screen = ownerBackTarget(screen) }) {
-                    CreateLotteryScreen(campsiteId = chosen.getId(), campsiteName = chosen.getCampsiteName())
+                    CreateLotteryScreen(
+                        campsiteId = chosen.getId(),
+                        campsiteName = chosen.getCampsiteName(),
+                        ownerId = ownerId
+                    )
                 }
             }
         }
 
+        "lotteryCampsites" -> {
+            if (chosen != null) {
+                WithBackArrow(onBack = { screen = ownerBackTarget(screen) }) {
+                    LotteryCampsitesScreen(campsiteId = chosen.getId())
+                }
+            }
+        }
 
-        else -> OwnerHomeScreenUI(
-            onSignOut = onSignOut,
-            onRegisterClick = { screen = "register" },
-            onMyCampsitesClick = { screen = "mine" },
-        )
+        else -> {
+            OwnerHomeScreenUI(
+                onSignOut = onSignOut,
+                onRegisterClick = { screen = "register" },
+                onMyCampsitesClick = { screen = "mine" }
+            )
+        }
     }
 }
 
 /**
  * Says which owner screen the back arrow or the phone's back button leads to.
- * Details goes back to My Campsites, the waitlist and Create Lottery go back
- * to details, and everything else goes back to the owner home.
+ * Details goes back to My Campsites, the waitlist, Create Lottery, the
+ * lottery's campsites and Edit go back to details, and everything else goes
+ * back to the owner home.
  *
  * @param screen the name of the screen that is open now
  * @return the name of the screen to go back to
@@ -188,7 +242,7 @@ fun OwnerScreens(ownerId: String, onSignOut: () -> Unit) {
 fun ownerBackTarget(screen: String): String {
     return when (screen) {
         "details" -> "mine"
-        "waitlist", "createLottery" -> "details"
+        "waitlist", "createLottery", "lotteryCampsites", "edit" -> "details"
         else -> "home"
     }
 }
