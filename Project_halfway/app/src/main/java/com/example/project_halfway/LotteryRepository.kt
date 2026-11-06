@@ -31,6 +31,10 @@ import com.google.firebase.firestore.Filter
  * The owner-side functions added for US 02.05.01 and 02.09.01
  * (getLotteriesForCampsite, drawIfDue, getEntrantNames) and for US 02.04.02
  * (updateCampsites) use ownerDb.
+ *
+ * When the draw happens it also writes a "won" or "notSelected" notification
+ * for every entrant (LotteryResultNotification, US 02.05.01).
+ *
  * Outstanding issues: no delete yet. Lotteries are created through save from
  * CreateLotteryScreen (US 02.04.01, US 02.04.02).
  * The draw runs when the owner opens the lottery's waitlist screen after
@@ -189,6 +193,58 @@ object LotteryRepository {
     }
 
     /**
+     * Loads one lottery through the entrant's login, for example so a winner
+     * can see its booking period (US 02.04.04).
+     *
+     * @param lotteryId the lottery's id
+     * @param onResult gets the lottery, or null if it couldn't be loaded
+     */
+    fun getById(lotteryId: String, onResult: (Lottery?) -> Unit) {
+        lotteries().document(lotteryId).get()
+            .addOnSuccessListener { document ->
+                val data = document.data
+                onResult(if (data == null) null else fromMap(document.id, data))
+            }
+            .addOnFailureListener {
+                println("Load lottery failed: ${it.message}")
+                onResult(null)
+            }
+    }
+
+    /**
+     * Takes an entrant off every lottery waiting list they are on, used when
+     * they delete their profile (US 01.08.01). All the changes are sent
+     * together in one batch.
+     *
+     * @param entrantId the entrant's id
+     * @param onDone gets true once every list is updated (or there were none),
+     * false if loading or saving failed
+     */
+    fun removeFromAllWaitingLists(entrantId: String, onDone: (Boolean) -> Unit) {
+        lotteries().whereArrayContains("waitingList", entrantId).get()
+            .addOnSuccessListener { result ->
+                if (result.isEmpty) {
+                    onDone(true)
+                    return@addOnSuccessListener
+                }
+                val batch = FirebaseSecurity.db.batch()
+                for (document in result.documents) {
+                    batch.update(document.reference, "waitingList", FieldValue.arrayRemove(entrantId))
+                }
+                batch.commit()
+                    .addOnSuccessListener { onDone(true) }
+                    .addOnFailureListener {
+                        println("Removing from waiting lists failed: ${it.message}")
+                        onDone(false)
+                    }
+            }
+            .addOnFailureListener {
+                println("Loading the entrant's waiting lists failed: ${it.message}")
+                onDone(false)
+            }
+    }
+
+    /**
      * Loads every lottery for a campsite, open or closed (for the owner's screens).
      * Gives back an empty list if there are none (or if loading failed).
      */
@@ -260,7 +316,8 @@ object LotteryRepository {
                 null
             } else {
                 val lottery = fromMap(snapshot.id, data)
-                if (lottery.drawWinners(System.currentTimeMillis())) {
+                val now = System.currentTimeMillis()
+                if (lottery.drawWinners(now)) {
                     // only write the draw fields, so nothing else in the document is touched
                     transaction.update(
                         document,
@@ -270,6 +327,14 @@ object LotteryRepository {
                             "drawn" to true
                         )
                     )
+                    // US 02.05.01: tell every entrant whether they won. These are written in
+                    // the same transaction, so a lottery is never drawn without them.
+                    for (notification in LotteryResultNotification.forDraw(lottery, now)) {
+                        transaction.set(
+                            FirebaseSecurity.ownerDb.collection("notifications").document(),
+                            LotteryResultNotification.toMap(notification)
+                        )
+                    }
                 }
                 lottery
             }

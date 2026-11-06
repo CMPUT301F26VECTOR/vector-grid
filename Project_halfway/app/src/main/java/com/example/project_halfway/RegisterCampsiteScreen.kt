@@ -1,14 +1,19 @@
 package com.example.project_halfway
 
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DatePickerDialog
@@ -46,26 +51,43 @@ import com.google.android.gms.maps.model.LatLng
  * no image is saved. The ownerId has to be passed in by the screen that
  * opens this one (the owner home screen).
  *
+ * The screen uses the app's green look from Browse Campsites: a white title
+ * with a back arrow, the boxes in a white panel, and a white Save button.
+ *
+ * The same screen edits a saved campsite (US 02.01.04): pass it as existing,
+ * and the boxes start filled in with its details, the title says
+ * "Edit Campsite", and Save updates it instead of making a new one.
+ *
  * @param ownerId user id of the signed in campsite owner; saving is refused if blank
+ * @param onBackClick called when the back arrow is pressed; null shows no arrow
+ * @param existing the campsite to edit, or null to register a new one
+ * @param onSaved called with the saved campsite after an edit is saved
  */
 @Composable
-fun RegisterCampsiteScreen(ownerId: String = "") {
+fun RegisterCampsiteScreen(
+    ownerId: String = "",
+    onBackClick: (() -> Unit)? = null,
+    existing: CampsiteModel? = null,
+    onSaved: (CampsiteModel) -> Unit = {}
+) {
+    // The form starts empty for a new campsite, or filled in when editing
+    val start = remember(existing) { existing?.let { CampsiteForm.fromCampsite(it) } ?: CampsiteForm() }
 
     // What the owner has typed so far, one variable per box
-    var name by remember { mutableStateOf("") }
-    var campgroundName by remember { mutableStateOf("") }
-    var location by remember { mutableStateOf("") }
-    var description by remember { mutableStateOf("") }
-    var occupancy by remember { mutableStateOf("") }
-    var type by remember { mutableStateOf("") }
-    var services by remember { mutableStateOf("") }
-    var tags by remember { mutableStateOf("") }
-    var price by remember { mutableStateOf("") }
+    var name by remember { mutableStateOf(start.name) }
+    var campgroundName by remember { mutableStateOf(start.campgroundName) }
+    var location by remember { mutableStateOf(start.location) }
+    var description by remember { mutableStateOf(start.description) }
+    var occupancy by remember { mutableStateOf(start.occupancy) }
+    var type by remember { mutableStateOf(start.type) }
+    var services by remember { mutableStateOf(start.services) }
+    var tags by remember { mutableStateOf(start.tags) }
+    var price by remember { mutableStateOf(start.pricePerNight) }
     // The map pin, kept as text because CampsiteForm checks and converts it
-    var latitude by remember { mutableStateOf("") }
-    var longitude by remember { mutableStateOf("") }
-    var placeName by remember { mutableStateOf("") }
-    var availableDates by remember { mutableStateOf(listOf<Map<String, String>>()) }
+    var latitude by remember { mutableStateOf(start.latitude) }
+    var longitude by remember { mutableStateOf(start.longitude) }
+    var placeName by remember { mutableStateOf(if (existing != null && existing.hasMapLocation()) "Current pin" else "") }
+    var availableDates by remember { mutableStateOf(start.availableDates) }
 
     // true while the calendar pop-up is open
     var showDatePicker by remember { mutableStateOf(false) }
@@ -76,19 +98,31 @@ fun RegisterCampsiteScreen(ownerId: String = "") {
     // Message shown under the Save button (an error, "Saving..." or "Listing created")
     var message by remember { mutableStateOf("") }
 
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+    LightStatusBarIcons()
 
-        Text("Register Campsite")
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(AppGreen)
+            .statusBarsPadding()
+            .navigationBarsPadding()
+            .imePadding()
+            .padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
+    ) {
+
+        GreenScreenHeader(
+            title = if (existing == null) "Register Campsite" else "Edit Campsite",
+            onBackClick = onBackClick,
+            backButtonTag = "owner_back_button"
+        )
+        Spacer(modifier = Modifier.height(HeaderGap))
 
         // The boxes scroll; the Save button below them always stays on screen.
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .verticalScroll(rememberScrollState())
-        ) {
+        WhitePanel(modifier = Modifier.weight(1f), scrollable = true) {
+            PanelLabel("Campsite details", first = true)
             FormField("Campsite Name", name, { name = it }, "name_field")
             FormField("Location (e.g. Edmonton, AB)", location, { location = it }, "location_field")
-            FormField("Description", description, { description = it }, "description_field")
+            FormField("Description", description, { description = it }, "description_field", singleLine = false)
             FormField("Occupancy", occupancy, { occupancy = it }, "occupancy_field", KeyboardType.Number)
             FormField("Campground Name", campgroundName, { campgroundName = it }, "campground_field")
             FormField("Site Type (e.g. Tent site)", type, { type = it }, "type_field")
@@ -97,17 +131,20 @@ fun RegisterCampsiteScreen(ownerId: String = "") {
             FormField("Price per night ($)", price, { price = it }, "price_field", KeyboardType.Decimal)
 
             // Map location: a pin dropped on a Google Map (optional)
-            Text("Map location (optional)", modifier = Modifier.padding(top = 12.dp))
+            PanelLabel("Map location (optional)")
             val lat = latitude.toDoubleOrNull()
             val lng = longitude.toDoubleOrNull()
             Text(
                 if (lat == null || lng == null) "No map location yet."
                 else "$placeName (${formatLatLng(lat, lng)})",
+                color = Color.Gray,
                 modifier = Modifier.testTag("map_location_text")
             )
             Row(verticalAlignment = Alignment.CenterVertically) {
                 OutlinedButton(
                     onClick = { showLocationPicker = true },
+                    border = BorderStroke(1.dp, AppGreen),
+                    colors = greenOutlinedButtonColors(),
                     modifier = Modifier.testTag("set_location_button")
                 ) {
                     Text(if (lat == null) "Set location on map" else "Change location")
@@ -117,35 +154,38 @@ fun RegisterCampsiteScreen(ownerId: String = "") {
                         onClick = { latitude = ""; longitude = ""; placeName = "" },
                         modifier = Modifier.testTag("remove_location_button")
                     ) {
-                        Text("Remove")
+                        Text("Remove", color = AppGreen)
                     }
                 }
             }
 
             // Available dates: one row per range, each with a Remove button
-            Text("Available dates", modifier = Modifier.padding(top = 12.dp))
+            PanelLabel("Available dates")
             if (availableDates.isEmpty()) {
-                Text("No dates added yet.", modifier = Modifier.testTag("no_dates_text"))
+                Text("No dates added yet.", color = Color.Gray, modifier = Modifier.testTag("no_dates_text"))
             }
             for (range in availableDates) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("${range["start"]} to ${range["end"]}", modifier = Modifier.weight(1f))
                     TextButton(onClick = { availableDates = availableDates - range }) {
-                        Text("Remove")
+                        Text("Remove", color = AppGreen)
                     }
                 }
             }
             OutlinedButton(
                 onClick = { showDatePicker = true },
+                border = BorderStroke(1.dp, AppGreen),
+                colors = greenOutlinedButtonColors(),
                 modifier = Modifier.testTag("add_dates_button")
             ) {
                 Text("Add available dates")
             }
         }
 
+        Spacer(modifier = Modifier.height(12.dp))
         Button(
-            modifier = Modifier.fillMaxWidth().testTag("save_button"),
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xff566C11)),
+            modifier = Modifier.fillMaxWidth().height(48.dp).testTag("save_button"),
+            colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = AppGreen),
             onClick = {
                 val form = CampsiteForm(
                     name = name,
@@ -170,16 +210,28 @@ fun RegisterCampsiteScreen(ownerId: String = "") {
                     message = "Please sign in as a campsite owner first."
                 } else {
                     message = "Saving..."
-                    CampsiteRepository.save(form.toCampsite(ownerId)) { worked ->
-                        message = if (worked) "Listing created" else "Could not save, please try again."
+                    val campsite = form.toCampsite(ownerId, existing)
+                    CampsiteRepository.save(campsite) { worked ->
+                        if (!worked) {
+                            message = "Could not save, please try again."
+                        } else if (existing == null) {
+                            message = "Listing created"
+                        } else {
+                            message = "Changes saved"
+                            onSaved(campsite)
+                        }
                     }
                 }
             }
         ) {
-            Text("Save")
+            Text("Save", fontWeight = FontWeight.Bold)
         }
 
-        Text(message, modifier = Modifier.testTag("message_text"))
+        Text(
+            message,
+            color = Color.White,
+            modifier = Modifier.padding(top = 8.dp, start = 4.dp).testTag("message_text")
+        )
     }
 
     if (showLocationPicker) {
@@ -223,14 +275,17 @@ private fun FormField(
     value: String,
     onValueChange: (String) -> Unit,
     tag: String,
-    keyboardType: KeyboardType = KeyboardType.Text
+    keyboardType: KeyboardType = KeyboardType.Text,
+    singleLine: Boolean = true
 ) {
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
         label = { Text(label) },
+        singleLine = singleLine,
         keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
-        modifier = Modifier.fillMaxWidth().testTag(tag)
+        colors = greenFieldColors(),
+        modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp).testTag(tag)
     )
 }
 
@@ -259,11 +314,11 @@ private fun AddDatesDialog(
                     }
                 }
             ) {
-                Text("Add")
+                Text("Add", color = if (start != null && end != null) AppGreen else Color.Gray)
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(onClick = onDismiss) { Text("Cancel", color = AppGreen) }
         }
     ) {
         DateRangePicker(

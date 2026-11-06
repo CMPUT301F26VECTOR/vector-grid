@@ -1,7 +1,11 @@
 package com.example.project_halfway
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -9,17 +13,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -27,19 +25,17 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-private val ProfileGreen = Color(0xFF566C11)
-
 /**
  * The entrant's profile page, opened by the profile icon on the home screen.
  * Shows the entrant's name, email and phone number from the Firestore "Users"
- * collection and lets them update it.
+ * collection and lets them update it. Uses the app's green look (the same as
+ * Browse Campsites): a white title with a back arrow and a white panel.
  *
  * Used for US 01.07.03. Uses the same "Users" fields as EntrantAuthManager
  * and the home screen ("Name", "EmailAddress", "PhoneNumber").
@@ -75,42 +71,22 @@ fun EntrantProfileScreen(onBackClick: () -> Unit) {
         }
     }
 
+    LightStatusBarIcons()
+
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(ProfileGreen)
+            .background(AppGreen)
+            .statusBarsPadding()
+            .navigationBarsPadding()
             .verticalScroll(rememberScrollState())
-            .padding(20.dp)
+            .padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
     ) {
-        // back arrow + title
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 20.dp, bottom = 20.dp)
-                .clickable { onBackClick() }
-        ) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = "Back",
-                tint = Color.White,
-                modifier = Modifier.size(28.dp)
-            )
-            Spacer(modifier = Modifier.padding(start = 12.dp))
-            Text(
-                text = "My Profile",
-                fontSize = 26.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.White
-            )
-        }
+        // back arrow + title, the same header as Browse Campsites
+        GreenScreenHeader(title = "My Profile", onBackClick = onBackClick)
+        Spacer(modifier = Modifier.height(HeaderGap))
 
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(14.dp))
-                .background(Color.Black)
-                .padding(20.dp)
-        ) {
+        WhitePanel {
             if (isEditing) {
                 ProfileEditForm(
                     name = name,
@@ -140,10 +116,12 @@ fun EntrantProfileScreen(onBackClick: () -> Unit) {
                     onCancel = { isEditing = false }
                 )
             } else {
-                ProfileInfoLine("Name: $name")
-                ProfileInfoLine("Email: $emailAddress")
-                ProfileInfoLine("Phone Number: $phoneNumber")
+                ProfileInfoLine("Name", name)
+                ProfileInfoLine("Email", emailAddress)
+                ProfileInfoLine("Phone Number", phoneNumber)
+                Spacer(modifier = Modifier.height(10.dp))
                 Button(
+                    colors = greenButtonColors(),
                     onClick = {
                         message = ""
                         isEditing = true
@@ -154,22 +132,24 @@ fun EntrantProfileScreen(onBackClick: () -> Unit) {
             }
 
             if (message != "") {
-                Text(text = message, color = Color.White, modifier = Modifier.padding(top = 8.dp))
+                Text(text = message, color = Color(0xFF3C4043), modifier = Modifier.padding(top = 8.dp))
             }
         }
     }
 }
 
-// one line of white profile text
+// One line of the profile: a grey label above the value
 @Composable
-private fun ProfileInfoLine(text: String) {
-    Text(
-        text = text,
-        fontWeight = FontWeight.Bold,
-        color = Color.White,
-        fontSize = 20.sp,
-        modifier = Modifier.padding(bottom = 7.dp)
-    )
+private fun ProfileInfoLine(label: String, value: String) {
+    Column(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+        Text(text = label, fontSize = 12.sp, color = Color(0xFF5F6368))
+        Text(
+            text = value.ifBlank { "Not set" },
+            fontWeight = FontWeight.Bold,
+            fontSize = 17.sp,
+            color = if (value.isBlank()) Color(0xFF9AA0A6) else Color(0xFF1C1B1F)
+        )
+    }
 }
 
 /**
@@ -197,43 +177,45 @@ fun ProfileEditForm(
     var phoneEdited by remember { mutableStateOf(phone) }
     var errorText by remember { mutableStateOf("") }
 
-    val boxColors = OutlinedTextFieldDefaults.colors(
-        focusedTextColor = Color.White,
-        unfocusedTextColor = Color.White,
-        focusedBorderColor = Color.White,
-        unfocusedBorderColor = Color.White
-    )
+    val boxColors = greenFieldColors()
 
     Column {
         OutlinedTextField(
             value = nameEdited,
             onValueChange = { nameEdited = it },
-            label = { Text(text = "Name", color = Color.White) },
-            colors = boxColors
+            label = { Text(text = "Name") },
+            singleLine = true,
+            colors = boxColors,
+            modifier = Modifier.fillMaxWidth()
         )
         OutlinedTextField(
             value = emailEdited,
             onValueChange = { emailEdited = it },
-            label = { Text(text = "Email", color = Color.White) },
-            colors = boxColors
+            label = { Text(text = "Email") },
+            singleLine = true,
+            colors = boxColors,
+            modifier = Modifier.fillMaxWidth()
         )
         OutlinedTextField(
             value = phoneEdited,
             onValueChange = { phoneEdited = it },
-            label = { Text(text = "Phone Number", color = Color.White) },
-            colors = boxColors
+            label = { Text(text = "Phone Number") },
+            singleLine = true,
+            colors = boxColors,
+            modifier = Modifier.fillMaxWidth()
         )
 
         if (errorText != "") {
-            Text(text = errorText, color = Color(0xFFFF8A80), modifier = Modifier.padding(top = 6.dp))
+            Text(text = errorText, color = Color(0xFFB3261E), modifier = Modifier.padding(top = 6.dp))
         }
 
         Row(
-            modifier = Modifier.padding(top = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            modifier = Modifier.padding(top = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Button(
                 modifier = Modifier.weight(1f),
+                colors = greenButtonColors(),
                 onClick = {
                     val error = ProfileValidator.checkInfo(nameEdited, emailEdited, phoneEdited)
                     if (error != null) {
@@ -246,8 +228,10 @@ fun ProfileEditForm(
             ) {
                 Text(text = "Save")
             }
-            Button(
+            OutlinedButton(
                 modifier = Modifier.weight(1f),
+                border = BorderStroke(1.dp, AppGreen),
+                colors = greenOutlinedButtonColors(),
                 onClick = onCancel
             ) {
                 Text(text = "Back")
@@ -260,7 +244,7 @@ fun ProfileEditForm(
 @Preview(showBackground = true)
 @Composable
 fun ProfileEditFormPreview() {
-    Column(modifier = Modifier.background(Color.Black).padding(20.dp)) {
+    Column(modifier = Modifier.background(Color.White).padding(20.dp)) {
         ProfileEditForm("Parneet Kaur", "parneet@ualberta.ca", "", { _, _, _ -> }, {})
     }
 }

@@ -1,8 +1,14 @@
 
 package com.example.project_halfway
 
-import android.R
 import android.content.Intent
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.outlined.EventNote
+import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.foundation.layout.statusBarsPadding
 import android.widget.Toast
 import androidx.compose.foundation.background
@@ -41,20 +47,22 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-private val HomeGreen = Color(0xFF566C11)
-
 /**
  * Displays the entrant home screen.
  *
- * Shows a welcome message, profile icon and Browse Campsites card.
+ * Shows a welcome message, profile icon, the entrant's details and cards for
+ * Browse Campsites, My Reservations & Entries and App Policy and Guidelines,
+ * in the app's green look (the same as Browse Campsites).
  * Calls onBrowseClick when the user selects the card.
- * The entrant can also edit their name, email and phone number, or delete
- * their profile (US 01.07.03).
+ * The entrant can also edit their name, email and phone number, checked with
+ * ProfileValidator (US 01.07.03), or delete their profile, which also takes
+ * them off every lottery waiting list (US 01.08.01).
  *
  * The profile icon opens the profile page (EntrantProfileActivity).
  *
@@ -75,6 +83,8 @@ fun EntrantHomeScreenUI(
     var emailAddress by remember { mutableStateOf("") }
     var PhoneNumber by remember { mutableStateOf("") }
     var isediting by remember {mutableStateOf(false)}
+    // Shown under the boxes when what was typed isn't valid (US 01.07.03)
+    var editError by remember { mutableStateOf("") }
     var openDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
     var viewPolicyGuidelines by remember {mutableStateOf(false)}
@@ -101,6 +111,16 @@ fun EntrantHomeScreenUI(
                     val entrant  = FirebaseSecurity.auth.currentUser
                     if (entrant!=null){
                         val uid = entrant.uid
+                        // US 01.08.01: first take the entrant off every lottery waiting list
+                        LotteryRepository.removeFromAllWaitingLists(uid) { removed ->
+                        if (!removed) {
+                            // keep the profile, so the entrant isn't left on a list with no profile
+                            Toast.makeText(
+                                context,
+                                "Could not delete your profile. Check your connection and try again.",
+                                Toast.LENGTH_SHORT).show()
+                            openDialog = false
+                        } else
                         //here it deletes the firebase details
                         FirebaseSecurity.db.collection("Users").document(uid).delete()
                             .addOnSuccessListener {
@@ -115,24 +135,19 @@ fun EntrantHomeScreenUI(
                                         onExit()
                                     }
                             }
+                        }
 
 
                     }
                 },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.DarkGray ,
-                        contentColor = Color.White
-                    )){
+                    colors = dangerButtonColors()){
                     Text(text = "Delete")
                 }
             },
             dismissButton = {
                 Button(
                     onClick = {openDialog = false},
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.LightGray,
-                        contentColor = Color.DarkGray
-                    )
+                    colors = greenOutlinedButtonColors()
                 ){
                     Text(text = "Cancel")
                 }
@@ -165,19 +180,28 @@ fun EntrantHomeScreenUI(
         AppPolicyAndGuidelines (onBack={viewPolicyGuidelines = false})
     }
     else{
+    LightStatusBarIcons()
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(HomeGreen)
+            .background(AppGreen)
             .statusBarsPadding()
-            .padding(20.dp),
+            .navigationBarsPadding()
+            .padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+    // Everything but the bottom buttons scrolls, so small screens still fit
+    Column(
+        modifier = Modifier
+            .weight(1f)
+            .verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
 
-        Spacer(modifier  = Modifier.height(20.dp))
+        Spacer(modifier  = Modifier.height(12.dp))
         // Welcome message and profile icon
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().padding(start = 4.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -199,63 +223,56 @@ fun EntrantHomeScreenUI(
                     }
             )
         }
-        Spacer(modifier = Modifier.height(2.dp))
-        Column(
-            modifier  = Modifier.fillMaxWidth()
-                .clip(RoundedCornerShape(14.dp))
-                .background(Color.Black)
-                .padding(20.dp)
-        ) {
+        Spacer(modifier = Modifier.height(16.dp))
 
-
+        // The entrant's details, in a white panel like the rest of the app
+        WhitePanel {
             if (isediting) {
                 OutlinedTextField(
                     value = nameEdited,
                     onValueChange = { nameEdited = it },
-                    label = { Text(text = "Name", color = Color.White) },
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White,
-                        focusedBorderColor = Color.White,
-                        unfocusedBorderColor = Color.White
-                    )
+                    label = { Text(text = "Name") },
+                    singleLine = true,
+                    colors = greenFieldColors(),
+                    modifier = Modifier.fillMaxWidth()
                 )
                 OutlinedTextField(
                     value = emailEdited,
                     onValueChange = { emailEdited = it },
-                    label = { Text(text = "Email", color = Color.White) },
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White,
-                        focusedBorderColor = Color.White,
-                        unfocusedBorderColor = Color.White
-                    )
+                    label = { Text(text = "Email") },
+                    singleLine = true,
+                    colors = greenFieldColors(),
+                    modifier = Modifier.fillMaxWidth()
                 )
                 OutlinedTextField(
                     value = PNedited,
                     onValueChange = { PNedited = it },
-                    label = {
-                        Text(
-                            text = "PhoneNumber",
-                            color = Color.White
-                        )
-                    },
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White,
-                        focusedBorderColor = Color.White,
-                        unfocusedBorderColor = Color.White
-                    )
-
-
+                    label = { Text(text = "PhoneNumber") },
+                    singleLine = true,
+                    colors = greenFieldColors(),
+                    modifier = Modifier.fillMaxWidth()
                 )
+                if (editError.isNotEmpty()) {
+                    Text(
+                        text = editError,
+                        color = Color(0xFFB3261E),
+                        modifier = Modifier.padding(top = 6.dp).testTag("home_edit_error")
+                    )
+                }
+                Spacer(modifier = Modifier.height(12.dp))
                 Row(
-                    modifier = Modifier.padding(5.dp)
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Button(
                         modifier = Modifier.weight(1f),
+                        colors = greenButtonColors(),
                         onClick = {
-                            if (uid != null) {
+                            // US 01.07.03: the same checks as the My Profile page
+                            val error = ProfileValidator.checkInfo(nameEdited, emailEdited, PNedited)
+                            if (error != null) {
+                                editError = error
+                            } else if (uid != null) {
+                                editError = ""
                                 FirebaseSecurity.db.collection("Users").document(uid).update(
                                     mapOf(
                                         "Name" to nameEdited,
@@ -271,42 +288,34 @@ fun EntrantHomeScreenUI(
                             }
                         }
                     ) {
-                        Text(text = "save")
+                        Text(text = "Save")
                     }
-                    Button(
+                    OutlinedButton(
                         modifier = Modifier.weight(1f),
-                        onClick = {isediting=false}
+                        border = BorderStroke(1.dp, AppGreen),
+                        colors = greenOutlinedButtonColors(),
+                        onClick = {
+                            editError = ""
+                            isediting = false
+                        }
                     ){
                         Text(text="Back")
                     }
                 }
 
             } else {
-
-
-                Text(
-                    text = "Name: $Name",
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White,
-                    fontSize = 20.sp
-                )
-                Spacer(modifier = Modifier.height(7.dp))
-                Text(
-                    text = "EmailAddress: $emailAddress",
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White,
-                    fontSize = 20.sp
-                )
-                Spacer(modifier = Modifier.height(7.dp))
-                Text(
-                    text = "PhoneNumber: $PhoneNumber",
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White,
-                    fontSize = 20.sp
-                )
-                Spacer(modifier = Modifier.height(7.dp))
+                DetailLine("Name", Name)
+                DetailLine("Email", emailAddress)
+                DetailLine("Phone", PhoneNumber)
+                Spacer(modifier = Modifier.height(10.dp))
                 Button(
+                    colors = greenButtonColors(),
                     onClick = {
+                        // start the boxes filled in with the current details
+                        nameEdited = Name
+                        emailEdited = emailAddress
+                        PNedited = PhoneNumber
+                        editError = ""
                         isediting = true
                     }
                 ) {
@@ -314,126 +323,75 @@ fun EntrantHomeScreenUI(
                 }
             }
         }
-        Spacer(modifier = Modifier.height(28.dp))
+        Spacer(modifier = Modifier.height(16.dp))
+
         // Card for opening the Browse Campsites screen
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(140.dp)
-                .clickable { onBrowseClick() },
-            shape = RoundedCornerShape(6.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = Color.White
-            )
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.SpaceBetween
-            ) {
-                Icon(
-                    imageVector = Icons.Outlined.Search,
-                    contentDescription = null,
-                    tint = Color.Black,
-                    modifier = Modifier.size(30.dp)
-                )
+        HomeCard(
+            icon = Icons.Outlined.Search,
+            title = "Browse Campsites",
+            subtitle = "Browse listings for sites with active or upcoming lotteries",
+            onClick = onBrowseClick
+        )
+        Spacer(modifier = Modifier.height(12.dp))
 
-                Spacer(modifier = Modifier.height(16.dp))
+        // Card for opening My Reservations & Entries (Waitlisted tab, US 01.02.01, 01.02.02)
+        HomeCard(
+            icon = Icons.Outlined.EventNote,
+            title = "My Reservations & Entries",
+            subtitle = "See the waitlists you joined",
+            onClick = { context.startActivity(Intent(context, MyEntriesActivity::class.java)) }
+        )
+        Spacer(modifier = Modifier.height(12.dp))
 
-                Text(
-                    text = "Browse Campsites",
-                    fontSize = 17.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.Black
-                )
-
-                Text(
-                    text = "Browse listings for sites with active or upcoming lotteries",
-                    fontSize = 13.sp,
-                    color = Color.Gray,
-                    lineHeight = 17.sp
-                )
-
-//        }
-            }
-
-        }
-        Spacer(modifier = Modifier.height(12.dp) )
-        Button(onClick = {viewPolicyGuidelines = true},
-            modifier = Modifier.fillMaxWidth()){
-            Text(text = "App Policy and Guidelines",
-                fontSize = 18.sp)
-        }
+        // Card for the app's policy and lottery guidelines
+        HomeCard(
+            icon = Icons.Outlined.Info,
+            title = "App Policy and Guidelines",
+            subtitle = "How lotteries, waitlists and reservations work",
+            onClick = { viewPolicyGuidelines = true }
+        )
 
         Spacer(modifier = Modifier.height(16.dp))
-        // Card for opening My Reservations & Entries (Waitlisted tab, US 01.02.01, 01.02.02)
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(100.dp)
-                .clickable {
-                    context.startActivity(Intent(context, MyEntriesActivity::class.java))
-                },
-            shape = RoundedCornerShape(6.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = Color.White
-            )
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text(
-                    text = "My Reservations & Entries",
-                    fontSize = 17.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.Black
-                )
-                Text(
-                    text = "See the waitlists you joined",
-                    fontSize = 13.sp,
-                    color = Color.Gray
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.weight(1f))
+    }
         Row(modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)){
 
             Button(
                 onClick={
                     openDialog = true
-
                 },
-                modifier = Modifier.weight(1f),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.Red
-                )
+                modifier = Modifier.weight(1f).height(48.dp),
+                colors = dangerButtonColors()
             ){
-                Text(text="Delete Profile",
-                    fontSize = 20.sp)
+                Text(text="Delete Profile", fontWeight = FontWeight.Bold)
             }
             Button(
                 onClick={
                     onExit()
                 },
-                modifier = Modifier.weight(1f),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.Black
-                )
+                modifier = Modifier.weight(1f).height(48.dp),
+                colors = whiteButtonColors()
             ){
-                Text(text="Signout",
-                    fontSize = 20.sp)
+                Text(text="Signout", fontWeight = FontWeight.Bold)
             }
-
-
-
-
         }
-
-
-
     }
     }
 }
 
+// One line of the entrant's details: a grey label above the value
+@Composable
+private fun DetailLine(label: String, value: String) {
+    Column(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+        Text(text = label, fontSize = 12.sp, color = Color(0xFF5F6368))
+        Text(
+            text = value.ifBlank { "Not set" },
+            fontSize = 17.sp,
+            fontWeight = FontWeight.Bold,
+            color = if (value.isBlank()) Color(0xFF9AA0A6) else Color(0xFF1C1B1F)
+        )
+    }
+}
 
 //@Preview(showBackground = true, showSystemUi = true)
 //@Composable
