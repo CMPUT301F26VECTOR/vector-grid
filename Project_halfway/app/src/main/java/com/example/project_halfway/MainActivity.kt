@@ -1,9 +1,12 @@
 package com.example.project_halfway
 
+import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
@@ -18,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.view.WindowCompat.enableEdgeToEdge
 import com.example.project_halfway.ui.theme.Project_halfwayTheme
+import com.google.firebase.messaging.FirebaseMessaging
 
 /**
  * The screen the app opens on. It applies the app theme and shows AuthGate,
@@ -26,20 +30,19 @@ import com.example.project_halfway.ui.theme.Project_halfwayTheme
  * Outstanding issues: none known.
  */
 class MainActivity : ComponentActivity() {
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             Project_halfwayTheme {
                 AuthGate()
-                //LoginScreenUI()
+                    //LoginScreenUI()
 //                SignUpScreen ()
-
             }
         }
     }
 }
-
 /** Android Studio preview of CampsiteDescriptionCard with a sample campsite. */
 // For UI preview while building CampsiteSummaryCard
 @Preview(showBackground = true)

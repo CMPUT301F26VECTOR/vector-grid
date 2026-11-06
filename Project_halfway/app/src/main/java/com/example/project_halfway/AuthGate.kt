@@ -1,6 +1,8 @@
 package com.example.project_halfway
 
+import android.os.Build
 import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -26,6 +28,7 @@ import com.google.firebase.auth.FirebaseAuth
  * goes back to the welcome screen when it is restarted. currentUser is tracked
  * but not used to skip the welcome screen yet.
  */
+@RequiresApi(Build.VERSION_CODES.TIRAMISU)
 @Composable
 fun AuthGate() {
 
@@ -95,7 +98,9 @@ fun AuthGate() {
                 )
             }
             else if (showNotifications) {
-                EntrantNotificationsScreen() // @TODO
+                EntrantNotificationsScreen(
+                    onBack = { showNotifications = false}
+                ) // @TODO
             }
 
             else {
