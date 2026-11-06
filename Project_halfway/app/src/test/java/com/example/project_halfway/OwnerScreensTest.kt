@@ -35,6 +35,11 @@ class OwnerScreensTest {
     }
 
     @Test
+    fun backFromLotteryCampsites_goesToDetails() {
+        assertEquals("details", ownerBackTarget("lotteryCampsites"))
+    }
+
+    @Test
     fun unknownScreen_goesHome() {
         assertEquals("home", ownerBackTarget("something else"))
     }
