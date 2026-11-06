@@ -12,9 +12,11 @@ import java.time.ZoneOffset
  * checks that text and turns it into a CampsiteModel. It has no Android or
  * Firebase code in it, so it can be unit tested on the computer.
  *
- * Outstanding issues: image upload is not built yet, so imageUrl is saved as
- * "". Latitude and longitude are typed in by hand until the map pin picker
- * is built.
+ * It is also used to edit a saved campsite (US 02.01.04): fromCampsite fills
+ * the form in, and toCampsite keeps the campsite's id, photo and ratings.
+ *
+ * Outstanding issues: image upload is not built yet, so a new campsite's
+ * imageUrl is saved as "".
  *
  * @property name the campsite's name, e.g. "Site 56A" (required)
  * @property campgroundName the campground the site belongs to
@@ -103,9 +105,11 @@ data class CampsiteForm(
      * Builds the campsite to save. Only call this when firstError() is null.
      *
      * @param ownerId uid of the signed in campsite owner
-     * @return a new CampsiteModel with no id yet (Firestore gives it one when saved)
+     * @param existing the campsite being edited (US 02.01.04), or null for a new
+     * one. Its id, photo and ratings are kept, since the form doesn't change them.
+     * @return the campsite to save; a new one has no id yet (Firestore gives it one)
      */
-    fun toCampsite(ownerId: String): CampsiteModel {
+    fun toCampsite(ownerId: String, existing: CampsiteModel? = null): CampsiteModel {
         check(firstError() == null) { "The form still has a problem: ${firstError()}" }
 
         return CampsiteModel(
@@ -116,15 +120,17 @@ data class CampsiteForm(
             longitude = longitude.trim().toDoubleOrNull() ?: 0.0,
             latitude = latitude.trim().toDoubleOrNull() ?: 0.0,
             occupancy = occupancy.trim().toInt(),
-            userRating = 0.0, // no ratings yet for a new campsite
+            userRating = existing?.getUserRating() ?: 0.0, // no ratings yet for a new campsite
             description = description.trim(),
-            imageUrl = "",
+            imageUrl = existing?.getImageUrl() ?: "",
+            id = existing?.getId() ?: "",
             ownerId = ownerId,
             type = type.trim(),
             services = splitList(services),
             pricePerNight = pricePerNight.trim().toDoubleOrNull() ?: 0.0,
             availableDateRanges = availableDates,
-            tags = splitList(tags)
+            tags = splitList(tags),
+            ratings = existing?.getRatings() ?: emptyList()
         )
     }
 
@@ -133,6 +139,32 @@ data class CampsiteForm(
      * dates) into the values a CampsiteModel stores.
      */
     companion object {
+
+        /**
+         * Fills the form in from a saved campsite, so the owner can edit it
+         * (US 02.01.04). Numbers become text the way the owner would type them,
+         * and a campsite without a map pin gets empty latitude and longitude.
+         *
+         * @param campsite the campsite to edit
+         * @return the form with the campsite's current details
+         */
+        fun fromCampsite(campsite: CampsiteModel): CampsiteForm {
+            val price = campsite.getPricePerNight()
+            return CampsiteForm(
+                name = campsite.getCampsiteName(),
+                campgroundName = campsite.getCampgroundName(),
+                location = campsite.getCampsiteLocation(),
+                description = campsite.getDescription(),
+                occupancy = campsite.getOccupancy().toString(),
+                type = campsite.getType(),
+                services = campsite.getServices().joinToString(", "),
+                tags = campsite.getTags().joinToString(", "),
+                pricePerNight = if (price > 0.0) price.toString() else "",
+                latitude = if (campsite.hasMapLocation()) campsite.getLatitude().toString() else "",
+                longitude = if (campsite.hasMapLocation()) campsite.getLongitude().toString() else "",
+                availableDates = campsite.getAvailableDateRanges()
+            )
+        }
 
         /**
          * Splits comma separated text into a clean list.

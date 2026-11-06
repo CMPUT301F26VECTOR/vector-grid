@@ -1,5 +1,13 @@
 package com.example.project_halfway
 
+import java.util.Locale
+import java.time.format.DateTimeFormatter
+import java.time.ZoneId
+import java.time.Instant
+import androidx.compose.material3.FilterChip
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -33,62 +41,137 @@ import androidx.compose.ui.unit.dp
 // looks (split up so LotteryEntrantsList can be tested without Firebase, the
 // same way LotterySection and LotteryButton are split).
 //
-// Outstanding issues: shows the campsite's newest lottery only. The owner
-// home screen still needs a button that opens this screen.
+// The owner can pick any of the campsite's lotteries (LotteryPicker); the
+// newest one shows first.
+//
+// Outstanding issues: none known.
 
 /**
- * Loads the newest lottery for a campsite, draws its winners if registration
- * has closed, looks up the entrants' names and shows them.
+ * Loads every lottery for a campsite and shows the newest one first; when the
+ * campsite has more than one, the owner can pick which to see (US 02.09.01).
+ * Draws the chosen lottery's winners if registration has closed (US 02.05.01),
+ * looks up the entrants' names and shows them. Opened from the owner's
+ * campsite details (View waitlist and winners).
  *
- * Used for US 02.05.01 and US 02.09.01.
- *
- * Outstanding issues: shows the campsite's newest lottery only, and nothing in
- * the app opens this screen yet (the owner home screen needs a button for it).
+ * Outstanding issues: none known.
  *
  * @param campsiteId id of the owner's campsite
  */
 @Composable
 fun LotteryEntrantsScreen(campsiteId: String) {
     var loading by remember { mutableStateOf(true) }
+    // every lottery of this campsite, newest first, and the one being shown
+    var lotteries by remember { mutableStateOf(listOf<Lottery>()) }
+    var selectedId by remember { mutableStateOf<String?>(null) }
     var lottery by remember { mutableStateOf<Lottery?>(null) }
     var names by remember { mutableStateOf(mapOf<String, String>()) }
 
     LaunchedEffect(campsiteId) {
-        LotteryRepository.getLotteriesForCampsite(campsiteId) { lotteries ->
-            // the lottery that closes last is the newest one
-            val newest = lotteries.maxByOrNull { it.endDate }
-            if (newest == null) {
+        LotteryRepository.getLotteriesForCampsite(campsiteId) { found ->
+            lotteries = newestFirst(found)
+            // start on the newest lottery
+            selectedId = lotteries.firstOrNull()?.id
+            if (selectedId == null) loading = false
+        }
+    }
+
+    // Load the chosen lottery whenever the owner picks another one
+    LaunchedEffect(selectedId) {
+        val id = selectedId ?: return@LaunchedEffect
+        val chosen = lotteries.firstOrNull { it.id == id } ?: return@LaunchedEffect
+        loading = true
+        // US 02.05.01: draws now if registration closed and nobody drew yet
+        LotteryRepository.drawIfDue(chosen.id) { afterDraw ->
+            val current = afterDraw ?: chosen
+            lottery = current
+            LotteryRepository.getEntrantNames(current.waitingList) { found ->
+                names = found
                 loading = false
-            } else {
-                // US 02.05.01: draws now if registration closed and nobody drew yet
-                LotteryRepository.drawIfDue(newest.id) { afterDraw ->
-                    val current = afterDraw ?: newest
-                    lottery = current
-                    LotteryRepository.getEntrantNames(current.waitingList) { found ->
-                        names = found
-                        loading = false
-                    }
-                }
             }
         }
     }
 
-    if (loading) {
-        Text("Loading lottery...", modifier = Modifier.padding(16.dp))
+    if (lotteries.isEmpty()) {
+        Text(
+            if (loading) "Loading lottery..." else "This campsite has no lottery yet.",
+            modifier = Modifier.padding(16.dp)
+        )
         return
     }
 
-    val current = lottery
-    if (current == null) {
-        Text("This campsite has no lottery yet.", modifier = Modifier.padding(16.dp))
-        return
-    }
+    Column {
+        // US 02.09.01: one chip per lottery, so the owner can see any of its waiting lists
+        if (lotteries.size > 1) {
+            LotteryPicker(
+                labels = lotteries.map { lotteryLabel(it) },
+                selectedIndex = lotteries.indexOfFirst { it.id == selectedId },
+                onPick = { index -> selectedId = lotteries[index].id }
+            )
+        }
 
-    LotteryEntrantsList(
-        waitlistNames = current.waitingList.map { names[it] ?: it },
-        winnerNames = current.winners.map { names[it] ?: it },
-        isDrawn = current.isDrawn
-    )
+        val current = lottery
+        if (loading || current == null) {
+            Text("Loading lottery...", modifier = Modifier.padding(16.dp))
+        } else {
+            LotteryEntrantsList(
+                waitlistNames = current.waitingList.map { names[it] ?: it },
+                winnerNames = current.winners.map { names[it] ?: it },
+                isDrawn = current.isDrawn
+            )
+        }
+    }
+}
+
+/**
+ * A row of chips, one per lottery, for choosing which waiting list to show
+ * (US 02.09.01). Does not talk to Firestore, so it can be tested on its own.
+ *
+ * @param labels text for each chip, e.g. "Nov 1 to Nov 21, 2026"
+ * @param selectedIndex which chip is selected
+ * @param onPick called with the index of the chip the owner taps
+ */
+@Composable
+fun LotteryPicker(labels: List<String>, selectedIndex: Int, onPick: (Int) -> Unit) {
+    Column(modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp)) {
+        Text("Lottery (registration period)", style = MaterialTheme.typography.labelLarge)
+        Row(
+            modifier = Modifier.horizontalScroll(rememberScrollState()).padding(top = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            labels.forEachIndexed { index, label ->
+                FilterChip(
+                    selected = index == selectedIndex,
+                    onClick = { onPick(index) },
+                    label = { Text(label) },
+                    modifier = Modifier.testTag("lottery_chip_$index")
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Puts a campsite's lotteries in order, the one that closes last first.
+ *
+ * @param lotteries the campsite's lotteries in any order
+ * @return the same lotteries, newest first
+ */
+fun newestFirst(lotteries: List<Lottery>): List<Lottery> = lotteries.sortedByDescending { it.endDate }
+
+/**
+ * A short name for a lottery: its registration period, e.g.
+ * "Nov 1 to Nov 21, 2026" (US 02.09.01).
+ *
+ * @param lottery the lottery
+ * @param zone the time zone to show the dates in; the phone's by default
+ * @return the label for the lottery's chip
+ */
+fun lotteryLabel(lottery: Lottery, zone: ZoneId = ZoneId.systemDefault()): String {
+    val day = DateTimeFormatter.ofPattern("MMM d", Locale.US)
+    val dayYear = DateTimeFormatter.ofPattern("MMM d, yyyy", Locale.US)
+    val start = Instant.ofEpochMilli(lottery.startDate).atZone(zone)
+    val end = Instant.ofEpochMilli(lottery.endDate).atZone(zone)
+    return start.format(day) + " to " + end.format(dayYear)
 }
 
 /**

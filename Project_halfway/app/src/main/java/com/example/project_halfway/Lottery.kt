@@ -19,8 +19,8 @@ import kotlin.random.Random
  * Outstanding issues: the owner screen for creating a lottery is not done yet
  * (US 02.04.01, 02.04.02), so for now test lotteries are added by hand in the
  * Firestore console. That screen can check the owner's choices with
- * firstSettingsError(). Winners and non-winners are recorded but not notified
- * yet (US 01.03.01, 01.03.02).
+ * firstSettingsError(). Winners can only reserve inside the booking period
+ * (isWithinBookingPeriod, US 02.04.04).
  *
  * @property id the Firestore document id of this lottery
  * @property campsiteId id of the campsite this lottery is for
@@ -201,6 +201,45 @@ class Lottery(
     // A calendar-picked date (midnight UTC in milliseconds) as a plain day.
     private fun calendarDay(millis: Long): LocalDate {
         return Instant.ofEpochMilli(millis).atZone(ZoneOffset.UTC).toLocalDate()
+    }
+
+    /**
+     * Checks if an entrant won this lottery's draw.
+     *
+     * @param entrantId the entrant's id
+     * @return true once the draw has happened and they are one of the winners
+     */
+    fun isWinner(entrantId: String): Boolean {
+        return isDrawn && _winners.contains(entrantId)
+    }
+
+    /**
+     * Checks that a winner's chosen stay is inside the booking period
+     * (US 02.04.04). Dates come from the calendar as midnight UTC, so whole
+     * days are compared. With no booking period set, any stay is allowed.
+     *
+     * @param stayStart the first night, in milliseconds (midnight UTC)
+     * @param stayEnd the last day, in milliseconds (midnight UTC)
+     * @return true if the stay starts and ends inside the booking period and
+     * doesn't end before it starts
+     */
+    fun isWithinBookingPeriod(stayStart: Long, stayEnd: Long): Boolean {
+        val start = calendarDay(stayStart)
+        val end = calendarDay(stayEnd)
+        if (end.isBefore(start)) return false
+        if (bookingStartDate <= 0L || bookingEndDate <= 0L) return true
+        return !start.isBefore(calendarDay(bookingStartDate)) && !end.isAfter(calendarDay(bookingEndDate))
+    }
+
+    /**
+     * Checks if one calendar day can be picked when reserving (US 02.04.04),
+     * so the calendar can grey out days outside the booking period.
+     *
+     * @param day a day from the calendar, in milliseconds (midnight UTC)
+     * @return true if it's inside the booking period, or there is no period
+     */
+    fun isBookableDay(day: Long): Boolean {
+        return isWithinBookingPeriod(day, day)
     }
 
     /**

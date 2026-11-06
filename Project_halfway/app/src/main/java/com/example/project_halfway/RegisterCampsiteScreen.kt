@@ -54,27 +54,40 @@ import com.google.android.gms.maps.model.LatLng
  * The screen uses the app's green look from Browse Campsites: a white title
  * with a back arrow, the boxes in a white panel, and a white Save button.
  *
+ * The same screen edits a saved campsite (US 02.01.04): pass it as existing,
+ * and the boxes start filled in with its details, the title says
+ * "Edit Campsite", and Save updates it instead of making a new one.
+ *
  * @param ownerId user id of the signed in campsite owner; saving is refused if blank
  * @param onBackClick called when the back arrow is pressed; null shows no arrow
+ * @param existing the campsite to edit, or null to register a new one
+ * @param onSaved called with the saved campsite after an edit is saved
  */
 @Composable
-fun RegisterCampsiteScreen(ownerId: String = "", onBackClick: (() -> Unit)? = null) {
+fun RegisterCampsiteScreen(
+    ownerId: String = "",
+    onBackClick: (() -> Unit)? = null,
+    existing: CampsiteModel? = null,
+    onSaved: (CampsiteModel) -> Unit = {}
+) {
+    // The form starts empty for a new campsite, or filled in when editing
+    val start = remember(existing) { existing?.let { CampsiteForm.fromCampsite(it) } ?: CampsiteForm() }
 
     // What the owner has typed so far, one variable per box
-    var name by remember { mutableStateOf("") }
-    var campgroundName by remember { mutableStateOf("") }
-    var location by remember { mutableStateOf("") }
-    var description by remember { mutableStateOf("") }
-    var occupancy by remember { mutableStateOf("") }
-    var type by remember { mutableStateOf("") }
-    var services by remember { mutableStateOf("") }
-    var tags by remember { mutableStateOf("") }
-    var price by remember { mutableStateOf("") }
+    var name by remember { mutableStateOf(start.name) }
+    var campgroundName by remember { mutableStateOf(start.campgroundName) }
+    var location by remember { mutableStateOf(start.location) }
+    var description by remember { mutableStateOf(start.description) }
+    var occupancy by remember { mutableStateOf(start.occupancy) }
+    var type by remember { mutableStateOf(start.type) }
+    var services by remember { mutableStateOf(start.services) }
+    var tags by remember { mutableStateOf(start.tags) }
+    var price by remember { mutableStateOf(start.pricePerNight) }
     // The map pin, kept as text because CampsiteForm checks and converts it
-    var latitude by remember { mutableStateOf("") }
-    var longitude by remember { mutableStateOf("") }
-    var placeName by remember { mutableStateOf("") }
-    var availableDates by remember { mutableStateOf(listOf<Map<String, String>>()) }
+    var latitude by remember { mutableStateOf(start.latitude) }
+    var longitude by remember { mutableStateOf(start.longitude) }
+    var placeName by remember { mutableStateOf(if (existing != null && existing.hasMapLocation()) "Current pin" else "") }
+    var availableDates by remember { mutableStateOf(start.availableDates) }
 
     // true while the calendar pop-up is open
     var showDatePicker by remember { mutableStateOf(false) }
@@ -98,7 +111,7 @@ fun RegisterCampsiteScreen(ownerId: String = "", onBackClick: (() -> Unit)? = nu
     ) {
 
         GreenScreenHeader(
-            title = "Register Campsite",
+            title = if (existing == null) "Register Campsite" else "Edit Campsite",
             onBackClick = onBackClick,
             backButtonTag = "owner_back_button"
         )
@@ -197,8 +210,16 @@ fun RegisterCampsiteScreen(ownerId: String = "", onBackClick: (() -> Unit)? = nu
                     message = "Please sign in as a campsite owner first."
                 } else {
                     message = "Saving..."
-                    CampsiteRepository.save(form.toCampsite(ownerId)) { worked ->
-                        message = if (worked) "Listing created" else "Could not save, please try again."
+                    val campsite = form.toCampsite(ownerId, existing)
+                    CampsiteRepository.save(campsite) { worked ->
+                        if (!worked) {
+                            message = "Could not save, please try again."
+                        } else if (existing == null) {
+                            message = "Listing created"
+                        } else {
+                            message = "Changes saved"
+                            onSaved(campsite)
+                        }
                     }
                 }
             }
