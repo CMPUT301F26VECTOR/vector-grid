@@ -1,18 +1,24 @@
 package com.example.project_halfway
 
 /**
- * Checks the entrant's profile info before it is saved.
+ * Checks the entrant's profile details before they are saved.
  *
- * Used for US 01.07.03 (update name, email and phone number on the profile).
- * Name is needed. Email and phone are optional (a new device sign-in starts
- * with them blank), but if they are filled in they have to look right.
+ * What it checks:
+ * - The name is not empty.
+ * - The email looks like something@something.something, if it is filled in.
+ * - The phone number has 10 digits, if it is filled in.
+ *
+ * Email and phone are optional because a new device sign-in starts with them blank.
+ * ProfileEditForm calls checkInfo when Save is pressed.
+ *
+ * Used for US 01.07.03 (update name, email and phone number).
  *
  * Outstanding issues: none known.
  */
 object ProfileValidator {
 
     /**
-     * Checks the name, email and phone number.
+     * Checks the name, email and phone number, in that order.
      *
      * @param name the entrant's name
      * @param email the entrant's email, can be blank
@@ -32,8 +38,11 @@ object ProfileValidator {
         return null
     }
 
-    /**
-     * Simple email check, needs something@something.something with no spaces.
+   /**
+     * Checks that an email looks right.
+     *
+     * It needs something before the @, and a dot with something on both sides
+     * after it, with no spaces. For example a@b.com works but a@b doesn't.
      *
      * @param email the email to check
      * @return true if it looks like an email
@@ -51,9 +60,11 @@ object ProfileValidator {
         return dotIndex > 0 && dotIndex < domain.length - 1
     }
 
-    /**
-     * Phone has to be 10 digits. Spaces, dashes and brackets are allowed,
-     * so 780-555-1234 and (780) 555 1234 both work.
+     /**
+     * Checks that a phone number has exactly 10 digits.
+     *
+     * Spaces, dashes and brackets are allowed, so 780-555-1234 and
+     * (780) 555 1234 both work. Any other character makes it invalid.
      *
      * @param phone the phone number to check
      * @return true if it is a 10 digit phone number
