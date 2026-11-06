@@ -18,6 +18,11 @@ import org.junit.Test
  * - An entrant with no name is shown as "Entrant" plus the start of their id.
  *
  * Used for US 01.01.06, 01.02.01, 01.02.02, 02.04.02, 02.04.04, 02.04.07, 02.05.01 and 02.09.01.
+ *
+ * AI assistance (Parneet Kaur):** a part of this code was written with Claude; Parneet tested it and checked that it works.
+ *
+ * Anthropic. (2026). *Claude* (Claude Opus 5.5) [Large language model]. https://claude.ai
+ *
  */
 class LotteryRepositoryTest {
 

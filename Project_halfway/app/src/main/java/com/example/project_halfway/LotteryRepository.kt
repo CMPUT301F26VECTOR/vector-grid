@@ -40,7 +40,13 @@ import com.google.firebase.firestore.Filter
  * Outstanding issues: lotteries can't be deleted yet, and the draw only runs
  * when the owner opens the lottery's waitlist screen after registration
  * closes, not on a server timer (see drawIfDue).
+ *
+ *
+ * **AI assistance (Parneet Kaur):** part of this code was written with Claude; Parneet tested it and checked that it works.
+ *
+ * Anthropic. (2026). *Claude* (Claude Opus 5.5) [Large language model]. https://claude.ai
  */
+
 
 object LotteryRepository {
 

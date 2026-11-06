@@ -20,7 +20,12 @@ import com.example.project_halfway.ui.theme.Project_halfwayTheme
  * - It is not listed in AndroidManifest.xml yet, so it has to be added there before it is used.
  * - Only the id and name are filled in. It should load the whole campsite with CampsiteRepository.getById.
  * - The Join button does nothing here; it should show LotterySection like Browse does.
+ *
+ * **AI assistance (Parneet Kaur):** part of this code was written with Claude; Parneet tested it and checked that it works.
+ *
+ * Anthropic. (2026). *Claude* (Claude Opus 5.5) [Large language model]. https://claude.ai
  */
+
 class CampsiteDetailsActivity : ComponentActivity() {
 
       /**
