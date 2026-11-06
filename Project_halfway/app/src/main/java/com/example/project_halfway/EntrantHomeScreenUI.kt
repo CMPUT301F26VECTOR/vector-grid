@@ -411,7 +411,16 @@ fun EntrantHomeScreenUI(
     }
 }
 
-
+/**
+ * Clickable card to be shown on the Entrant homescreen. Customisable icon, title, description,
+ * and action on click.
+ *
+ * @param icon ImageVector to be displayed at top of card
+ * @param title Title of card
+ * @param subtitle Card description
+ * @param onCardClick Called when the user clicks on the card
+ *
+ */
 @Composable
 fun HomeScreenCard(icon: ImageVector, title: String, subtitle: String,
                    onCardClick: () -> Unit) {
@@ -457,9 +466,9 @@ fun HomeScreenCard(icon: ImageVector, title: String, subtitle: String,
     }
 }
 
-
+/** Android Studio preview of EntrantHomeScreenPreview **/
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun EntrantHomeScreenPreview() {
-    EntrantHomeScreenUI({}, {})
+    EntrantHomeScreenUI({}, {}, {})
 }
