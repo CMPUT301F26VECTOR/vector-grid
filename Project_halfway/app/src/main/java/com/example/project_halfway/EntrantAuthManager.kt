@@ -2,6 +2,7 @@ package com.example.project_halfway
 import com.google.firebase.auth.FirebaseAuthInvalidUserException
 import com.google.firebase.firestore.Source
 import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.messaging.FirebaseMessaging
 
 /**
  * Signs entrants in with their device, with no username or password
@@ -38,9 +39,7 @@ object EntrantAuthManager {
      * @param onFailure called with an error message if sign-in fails, or if a
      * different (non-anonymous) account is already signed in
      */
-    fun signIn(
-        onSuccess: (FirebaseUser) -> Unit,
-        onFailure: (String) -> Unit
+    fun signIn(onSuccess: (FirebaseUser) -> Unit, onFailure: (String) -> Unit
     ) {
         val auth = FirebaseSecurity.auth
         val existingUser = auth.currentUser
@@ -109,32 +108,42 @@ object EntrantAuthManager {
                     if (snapshot.getString("role") == "entrant") {
                         onSuccess(user)
                     }
+                    else {
+                        onFailure("Access denied: User role is not an entrant.")
+                    }
                 } else {
-                    val entrant = EntrantProfile(
-                        Name = "",
-                        EmailAddress = "",
-                        PhoneNumber = "",
-                        ProfilePicture = "",
-                        uid = user.uid
-                    )
-                    val entrantdata = hashMapOf(
-                        "Name" to entrant.Name,
-                        "EmailAddress" to entrant.EmailAddress,
-                        "PhoneNumber" to entrant.PhoneNumber,
-                        "ProfilePicture" to entrant.ProfilePicture,
-                        "uid" to entrant.uid,
-                        "role" to "entrant"
-                    )
-                    document.set(entrantdata)
-                        .addOnSuccessListener {
-                            onSuccess(user)
-                        }
-                        .addOnFailureListener { exception ->
-                            onFailure(
-                                exception.localizedMessage
-                                    ?: "Failed to create entrant profile"
-                            )
-                        }
+                    // Extract FCM token
+                    FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+                        val token = if (task.isSuccessful) task.result else ""
+
+                        val entrant = EntrantProfile(
+                            Name = "",
+                            EmailAddress = "",
+                            PhoneNumber = "",
+                            ProfilePicture = "",
+                            uid = user.uid,
+                            fcmToken = token
+                        )
+                        val entrantdata = hashMapOf(
+                            "Name" to entrant.Name,
+                            "EmailAddress" to entrant.EmailAddress,
+                            "PhoneNumber" to entrant.PhoneNumber,
+                            "ProfilePicture" to entrant.ProfilePicture,
+                            "uid" to entrant.uid,
+                            "role" to "entrant",
+                            "fcmToken" to entrant.fcmToken
+                        )
+                        document.set(entrantdata)
+                            .addOnSuccessListener {
+                                onSuccess(user)
+                            }
+                            .addOnFailureListener { exception ->
+                                onFailure(
+                                    exception.localizedMessage
+                                        ?: "Failed to create entrant profile"
+                                )
+                            }
+                    }
                 }
 
             }

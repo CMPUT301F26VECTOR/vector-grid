@@ -98,15 +98,17 @@ fun LotteryEntrantsScreen(campsiteId: String) {
  * @param waitlistNames names of everyone who joined the waitlist
  * @param winnerNames names of the entrants the draw picked
  * @param isDrawn true once the draw has happened
+ * Users on Waitlist" button on waitlist tab
  */
 @Composable
 fun LotteryEntrantsList(
     waitlistNames: List<String>,
     winnerNames: List<String>,
-    isDrawn: Boolean
+    isDrawn: Boolean,
 ) {
     // which tab is open: false = WAITLIST, true = WINNERS
     var showWinners by remember { mutableStateOf(false) }
+    var showSendNotificationScreen by remember { mutableStateOf(false) }
 
     Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
 
@@ -130,19 +132,30 @@ fun LotteryEntrantsList(
             } else {
                 NameList(winnerNames, "winners_list")
             }
-        } else {
-            Text(
-                "People on waitlist: ${waitlistNames.size}",
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(top = 12.dp).testTag("waitlist_count")
-            )
-            if (waitlistNames.isEmpty()) {
+        } else {    // Show the waitlist
+
+            if(!showSendNotificationScreen) {
+                Button(onClick = { showSendNotificationScreen = true }) {
+                    Text("Send Notification to Users on Waitlist")
+                }
+
                 Text(
-                    "No entrants have joined yet.",
-                    modifier = Modifier.testTag("empty_waitlist")
+                    "People on waitlist: ${waitlistNames.size}",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(top = 12.dp).testTag("waitlist_count")
                 )
-            } else {
-                NameList(waitlistNames, "waitlist_list")
+                if (waitlistNames.isEmpty()) {
+                    Text(
+                        "No entrants have joined yet.",
+                        modifier = Modifier.testTag("empty_waitlist")
+                    )
+                } else {
+                    NameList(waitlistNames, "waitlist_list")
+                }
+            }
+
+            else {
+                OwnerNotifyEntrantsScreen()
             }
         }
     }

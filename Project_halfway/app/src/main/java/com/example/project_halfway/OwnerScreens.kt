@@ -168,10 +168,11 @@ fun OwnerScreens(ownerId: String, onSignOut: () -> Unit) {
             }
         }
 
+
         else -> OwnerHomeScreenUI(
             onSignOut = onSignOut,
             onRegisterClick = { screen = "register" },
-            onMyCampsitesClick = { screen = "mine" }
+            onMyCampsitesClick = { screen = "mine" },
         )
     }
 }
