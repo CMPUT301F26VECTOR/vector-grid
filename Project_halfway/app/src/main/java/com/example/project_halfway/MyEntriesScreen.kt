@@ -59,7 +59,6 @@ private val EntriesGreen = Color(0xFF566C11)
  */
 @Composable
 fun MyEntriesScreen(onBackClick: () -> Unit) {
-    // start on the Waitlisted tab since that's the one that works
     var selectedTab by remember { mutableStateOf(1) }
     val tabs = listOf("Reservations", "Waitlisted", "Lottery")
 
@@ -68,7 +67,7 @@ fun MyEntriesScreen(onBackClick: () -> Unit) {
             .fillMaxSize()
             .background(EntriesGreen)
     ) {
-        // back arrow + title
+     
         Row(
             modifier = Modifier
                 .fillMaxWidth()
