@@ -114,6 +114,7 @@ fun LotteryEntrantsScreen(campsiteId: String) {
             Text("Loading lottery...", modifier = Modifier.padding(16.dp))
         } else {
             LotteryEntrantsList(
+                lottery = current,
                 waitlistNames = current.waitingList.map { names[it] ?: it },
                 winnerNames = current.winners.map { names[it] ?: it },
                 isDrawn = current.isDrawn
@@ -185,6 +186,7 @@ fun lotteryLabel(lottery: Lottery, zone: ZoneId = ZoneId.systemDefault()): Strin
  */
 @Composable
 fun LotteryEntrantsList(
+    lottery: Lottery,
     waitlistNames: List<String>,
     winnerNames: List<String>,
     isDrawn: Boolean,
@@ -238,7 +240,7 @@ fun LotteryEntrantsList(
             }
 
             else {
-                OwnerNotifyEntrantsScreen()
+                OwnerNotifyEntrantsScreen({}, lottery)
             }
         }
     }

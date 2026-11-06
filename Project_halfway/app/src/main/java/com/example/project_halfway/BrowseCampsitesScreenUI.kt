@@ -152,7 +152,7 @@ fun BrowseCampsitesScreenUI(
 
         CampsiteDetailedCard(
             campsite = chosen,
-            isLotteryActive = true,
+            isLotteryActive = false,
             onBackClick = { selectedCampsite = null },
             onJoinClick = {},
             actionArea = { LotterySection(chosen.getId()) }

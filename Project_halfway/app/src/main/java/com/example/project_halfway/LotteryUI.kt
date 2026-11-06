@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.google.firebase.messaging.FirebaseMessaging
 
 // The lottery part of the campsite details screen.
 // US 01.01.06 - join an active lottery from the campsite details screen
@@ -87,8 +88,13 @@ fun LotterySection(campsiteId: String) {
                         onList = true
                         count = current.getWaitingListSize()
                         message = "You joined the waiting list!"
+
+                        // Subscribe entrant's device to the topic
+                        val topicName = "WAITLIST_CAMPSITE_${current.getLotteryId()}"
+                        FirebaseMessaging.getInstance().subscribeToTopic(topicName)
+
                     } else {
-                        // undo it locally since firestore didn't save it
+                        // undo it locally since Firestore didn't save it
                         current.leaveWaitingList(entrantId)
                         message = "Could not join, try again"
                     }
