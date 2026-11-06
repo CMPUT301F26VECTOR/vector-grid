@@ -37,7 +37,10 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.DisposableEffect
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -64,7 +67,9 @@ import androidx.compose.ui.unit.sp
  * ProfileValidator (US 01.07.03), or delete their profile, which also takes
  * them off every lottery waiting list (US 01.08.01).
  *
- * The profile icon opens the profile page (EntrantProfileActivity).
+ * The profile icon opens the profile page (EntrantProfileActivity). The
+ * details reload whenever the home comes back into view, so edits made on
+ * that page show here straight away.
  *
  * Outstanding issues: none known.
  *
@@ -160,20 +165,26 @@ fun EntrantHomeScreenUI(
 
         )
     }
-    LaunchedEffect(uid) {
-        if (uid!=null){
-            FirebaseSecurity.db.collection("Users").document(uid).get()
-                .addOnSuccessListener { document->
-                    if(document.exists()){
-                        //if null then jsut dispaly ""
-                        Name = document.getString("Name")?:""
-                        emailAddress = document.getString("EmailAddress")?:""
-                        PhoneNumber = document.getString("PhoneNumber")?:""
+    // Load the entrant's details from Firestore. This runs every time the home
+    // screen comes back into view (ON_RESUME), so changes saved on the My Profile
+    // page show here straight away when the entrant comes back.
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner, uid) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME && uid != null) {
+                FirebaseSecurity.db.collection("Users").document(uid).get()
+                    .addOnSuccessListener { document ->
+                        if (document.exists()) {
+                            // if a value is missing, show it as blank ("Not set")
+                            Name = document.getString("Name") ?: ""
+                            emailAddress = document.getString("EmailAddress") ?: ""
+                            PhoneNumber = document.getString("PhoneNumber") ?: ""
+                        }
                     }
-                }
-
-
+            }
         }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
     if (viewPolicyGuidelines){
