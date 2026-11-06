@@ -147,4 +147,28 @@ class LotteryRepositoryTest {
         assertEquals("Entrant abc123", LotteryRepository.nameToShow("abc123xyz", null))
         assertEquals("Priya", LotteryRepository.nameToShow("abc123xyz", "Priya"))
     }
+    @Test
+    fun toMapAndFromMap_keepEveryCampsite() {
+        val lottery = Lottery(
+            id = "l1", campsiteId = "a", startDate = 1000L, endDate = 2000L,
+            campsiteIds = listOf("a", "b")
+        )
+
+        val copy = LotteryRepository.fromMap("l1", LotteryRepository.toMap(lottery))
+
+        assertEquals(listOf("a", "b"), copy.campsiteIds)
+    }
+
+    @Test
+    fun fromMap_oldLotteryWithoutList_usesCampsiteId() {
+        val map: Map<String, Any> = mapOf(
+            "campsiteId" to "camp_001",
+            "startDate" to 1000L,
+            "endDate" to 2000L
+        )
+
+        val lottery = LotteryRepository.fromMap("l1", map)
+
+        assertEquals(listOf("camp_001"), lottery.campsiteIds)
+    }
 }
