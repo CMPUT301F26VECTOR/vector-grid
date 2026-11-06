@@ -7,9 +7,10 @@ import androidx.activity.enableEdgeToEdge
 import com.example.project_halfway.ui.theme.Project_halfwayTheme
 
 /**
- * Opens the entrant's profile page (EntrantProfileScreen). Started by the
- * profile icon on the entrant home screen. The back arrow closes it and goes
- * back to the home screen.
+ * Opens the entrant's My Profile page (EntrantProfileScreen).
+ *
+ * It is started by the profile icon on the entrant home screen. The back arrow
+ * closes it and goes back to the home screen.
  *
  * Used for US 01.07.03.
  *
