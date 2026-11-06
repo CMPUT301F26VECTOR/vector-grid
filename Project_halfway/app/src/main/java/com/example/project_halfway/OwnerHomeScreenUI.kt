@@ -26,7 +26,7 @@ import androidx.compose.ui.Modifier
 fun OwnerHomeScreenUI(
     onSignOut: () -> Unit,
     onRegisterClick: () -> Unit = {},
-    onMyCampsitesClick: () -> Unit = {}
+    onMyCampsitesClick: () -> Unit = {},
 ) {
     Column(
         modifier = Modifier.fillMaxSize(),
