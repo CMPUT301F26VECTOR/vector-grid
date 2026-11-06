@@ -5,16 +5,25 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-// Tests for the Lottery model (US 01.01.06, 01.02.01, 01.02.02)
+/**
+ * Unit tests for the Lottery model.
+ *
+ * What they check:
+ * - isActive: open only between the start and end date
+ * - joinWaitingList: adds an entrant, but not twice, not when closed, and not with a blank id
+ * - leaveWaitingList: removes only that entrant, and the entrant can join again later
+ * - getDaysLeft: counts full days left, and 0 once closed
+ * - removeCampsite: only before registration opens, and never the last campsite
+ *
+ * Used for US 01.01.06, 01.02.01, 01.02.02 and 02.04.02.
+ */
 
 class LotteryTest {
 
     private val oneDay = 24 * 60 * 60 * 1000L
 
-    // pretend "today" is this time so the tests always give the same answer
     private val today = 1_780_000_000_000L
 
-    // lottery that started 2 days ago and ends in 5 days
     private fun openLottery(): Lottery {
         return Lottery(
             id = "lottery_1",
