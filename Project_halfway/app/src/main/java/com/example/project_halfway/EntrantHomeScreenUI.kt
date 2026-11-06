@@ -46,7 +46,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-private val HomeGreen = Color(0xFF526B0D)
+private val HomeGreen = Color(0xFF566C11)
 
 /**
  * Displays the entrant home screen.
