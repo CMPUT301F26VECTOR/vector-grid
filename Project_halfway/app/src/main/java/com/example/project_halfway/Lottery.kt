@@ -286,6 +286,13 @@ class Lottery(
     }
 
     /**
+     * @return lotteryId
+     */
+    fun getLotteryId(): String {
+        return id
+    }
+
+    /**
      * Works out how many full days are left before the lottery closes.
      * Could be used for the "Days left in lottery" label on the summary card.
      *

@@ -124,7 +124,7 @@ class CampsiteFirebaseMessagingService : FirebaseMessagingService()  {
 
         val manager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
 
-        val intent = Intent(this, CampsiteFirebaseMessagingService::class.java).apply {
+        val intent = Intent(this, MainActivity::class.java).apply {
             addFlags(FLAG_ACTIVITY_CLEAR_TOP)
         }
 
