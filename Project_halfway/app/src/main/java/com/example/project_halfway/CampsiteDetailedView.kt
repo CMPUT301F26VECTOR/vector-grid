@@ -562,16 +562,18 @@ fun CampsiteMapSection(campsite: CampsiteModel) {
         ) {
             Button(
                 onClick = { GoogleMapsLinks.openDirections(context, position) },
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xff566C11)),
+                colors = greenButtonColors(),
                 modifier = Modifier.testTag("directions_button")
             ) {
                 Text("Directions")
             }
             OutlinedButton(
                 onClick = { GoogleMapsLinks.openPin(context, position) },
+                border = BorderStroke(1.dp, AppGreen),
+                colors = greenOutlinedButtonColors(),
                 modifier = Modifier.testTag("open_in_maps_button")
             ) {
-
+                Text("Open in Google Maps")
             }
         }
     }
