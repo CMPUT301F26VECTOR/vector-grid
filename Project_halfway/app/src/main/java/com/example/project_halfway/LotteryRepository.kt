@@ -29,8 +29,8 @@ import com.google.firebase.firestore.Filter
  *
  * Entrant-side functions use FirebaseSecurity.db (the entrant's login).
  * The owner-side functions added for US 02.05.01 and 02.09.01
- * (getLotteriesForCampsite, drawIfDue, getEntrantNames) use ownerDb.
- *
+ * (getLotteriesForCampsite, drawIfDue, getEntrantNames) and for US 02.04.02
+ * (updateCampsites) use ownerDb.
  * Outstanding issues: no delete yet. Lotteries are created through save from
  * CreateLotteryScreen (US 02.04.01, US 02.04.02).
  * The draw runs when the owner opens the lottery's waitlist screen after
@@ -212,6 +212,30 @@ object LotteryRepository {
             .addOnFailureListener {
                 println("Load lotteries failed: ${it.message}")
                 onResult(emptyList())
+            }
+    }
+
+    /**
+     * Saves the list of campsites a lottery is for (US 02.04.02), for example after
+     * the owner removes one. Only the campsite fields are written, so the waiting
+     * list and the draw are left as they are.
+     *
+     * @param lotteryId the Firestore id of the lottery
+     * @param campsiteIds the campsites the lottery has now; the first is the main one
+     * @param onDone gets true once Firestore has saved it, or false if it failed
+     */
+    fun updateCampsites(lotteryId: String, campsiteIds: List<String>, onDone: (Boolean) -> Unit) {
+        ownerLotteries().document(lotteryId)
+            .update(
+                mapOf(
+                    "campsiteId" to (campsiteIds.firstOrNull() ?: ""),
+                    "campsiteIds" to campsiteIds
+                )
+            )
+            .addOnSuccessListener { onDone(true) }
+            .addOnFailureListener {
+                println("Update campsites failed: ${it.message}")
+                onDone(false)
             }
     }
 
