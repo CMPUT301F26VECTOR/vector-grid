@@ -7,17 +7,29 @@ import androidx.activity.enableEdgeToEdge
 import com.example.project_halfway.ui.theme.Project_halfwayTheme
 
 /**
- * Opens the campsite details screen for one campsite.
- * Start it with an Intent and put "campsiteId" and "campsiteName" as extras.
+ * Opens the campsite details screen for one campsite in its own activity.
+ *
+ * How to start it: use an Intent and put "campsiteId" and "campsiteName" as extras.
+ *
+ * Not used yet: the Browse screen shows the details screen itself. This is kept
+ * so a campsite can be opened from somewhere else later, like scanning its QR code.
  *
  * Used for US 01.01.05 and US 01.01.06.
  *
- * Outstanding issues: only the id and name are passed in for now. Once
- * CampsiteRepository is on main we can load the whole campsite with getById.
- * This activity is not listed in AndroidManifest.xml yet, so it can't be
- * started until it is added there.
+ * Outstanding issues:
+ * - It is not listed in AndroidManifest.xml yet, so it has to be added there before it is used.
+ * - Only the id and name are filled in. It should load the whole campsite with CampsiteRepository.getById.
+ * - The Join button does nothing here; it should show LotterySection like Browse does.
  */
 class CampsiteDetailsActivity : ComponentActivity() {
+
+      /**
+     * Reads the campsite's id and name from the Intent and shows its details screen.
+     * The back arrow closes the activity.
+     *
+     * @param savedInstanceState Android's saved state, not used here
+     */
+    
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -25,7 +37,6 @@ class CampsiteDetailsActivity : ComponentActivity() {
         val campsiteId = intent.getStringExtra("campsiteId") ?: ""
         val campsiteName = intent.getStringExtra("campsiteName") ?: "Campsite"
 
-        // only name and id are real here, the rest are blanks for now
         val campsite = CampsiteModel(
             campsiteName, "", "", 0.0, 0.0, 0, 0.0, "", "",
             id = campsiteId
