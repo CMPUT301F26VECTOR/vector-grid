@@ -4,9 +4,21 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
 
-// Tests that a lottery is turned into Firestore data and back correctly.
-// Doesn't use the real database so it runs on the computer.
-
+/**
+ * Unit tests for changing a Lottery to Firestore data and back
+ * (LotteryRepository.toMap and fromMap), plus nameToShow.
+ *
+ * They don't use the real database, so they run on the computer.
+ *
+ * What they check:
+ * - Every field comes back the same after toMap then fromMap.
+ * - Older lotteries that are missing fields get safe defaults.
+ * - Booking dates and a waiting list limit that aren't set are left out of the map.
+ * - A waiting list limit of 0 or less means no limit.
+ * - An entrant with no name is shown as "Entrant" plus the start of their id.
+ *
+ * Used for US 01.01.06, 01.02.01, 01.02.02, 02.04.02, 02.04.04, 02.04.07, 02.05.01 and 02.09.01.
+ */
 class LotteryRepositoryTest {
 
     @Test
@@ -44,7 +56,6 @@ class LotteryRepositoryTest {
 
     @Test
     fun toMapThenFromMap_keepsDrawResults() {
-        // US 02.05.01: a drawn lottery must still be drawn after loading it again
         val original = Lottery(
             id = "lottery_3",
             campsiteId = "camp_001",
@@ -67,7 +78,6 @@ class LotteryRepositoryTest {
 
     @Test
     fun fromMap_oldLotteryWithoutDrawFields_usesDefaults() {
-        // lotteries added in the console before the draw existed
         val map = mapOf<String, Any>(
             "campsiteId" to "camp_001",
             "startDate" to 1_780_000_000_000L,
@@ -83,7 +93,6 @@ class LotteryRepositoryTest {
 
     @Test
     fun toMapThenFromMap_keepsBookingPeriodAndCapacity() {
-        // US 02.04.04 and US 02.04.07
         val original = Lottery(
             id = "lottery_4",
             campsiteId = "camp_001",
@@ -129,7 +138,7 @@ class LotteryRepositoryTest {
 
     @Test
     fun fromMap_capacityZeroOrLess_meansNoLimit() {
-        // a 0 typed in the Firestore console must not block everyone from joining
+        
         for (bad in listOf(0L, -5L)) {
             val map = mapOf<String, Any>(
                 "campsiteId" to "camp_001",
