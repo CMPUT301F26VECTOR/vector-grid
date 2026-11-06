@@ -28,6 +28,15 @@ android {
         version = release(37)
     }
 
+    packaging {
+        resources {
+            excludes += "META-INF/INDEX.LIST"
+            excludes += "META-INF/DEPENDENCIES"
+            excludes += "META-INF/LICENSE*"
+            excludes += "META-INF/NOTICE*"
+        }
+    }
+
     defaultConfig {
         applicationId = "com.example.project_halfway"
         minSdk = 24
@@ -85,6 +94,9 @@ dependencies {
     // For notifications
     implementation("com.google.firebase:firebase-messaging-ktx:24.1.0")
     implementation("com.google.accompanist:accompanist-permissions:0.30.1")
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    // For generating Authentication Tokens
+    implementation("com.google.auth:google-auth-library-oauth2-http:1.23.0")
 
 }
 // Dokka: builds HTML documentation from the KDoc comments in the code.

@@ -36,6 +36,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.google.firebase.messaging.FirebaseMessaging
 
 private val EntriesGreen = Color(0xFF566C11)
 
@@ -44,7 +45,8 @@ private val EntriesGreen = Color(0xFF566C11)
  * It has three tabs: Reservations, Waitlisted and Lottery.
  *
  * The Waitlisted tab is done: it lists every lottery waiting list the entrant
- * is on, how many days are left, and a Leave Waitlist button.
+ * is on, how many days are left, and a Leave Waitlist button. Unsubscribes user from FCM
+ * topic when a waitlist is left.
  * Used for US 01.02.01 (see the waiting lists I joined) and
  * US 01.02.02 (leave a waiting list).
  *
@@ -187,6 +189,11 @@ fun WaitlistedTab() {
                         if (worked) {
                             waitlists.remove(lottery)
                             message = "You left the waitlist"
+
+                            // Remove entrant from the FCM topic:
+                            FirebaseMessaging.getInstance().subscribeToTopic("WAITLIST_CAMPSITE_" +
+                                    lottery.getLotteryId())
+
                         } else {
                             message = "Could not leave, try again"
                         }

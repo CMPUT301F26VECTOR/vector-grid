@@ -111,9 +111,6 @@ fun AuthGate() {
                     onBrowseClick = {
                         showBrowse = true
                     },
-                    onNotificationsClick = {
-                        showNotifications = true
-                    }
                 )
             }
         }
