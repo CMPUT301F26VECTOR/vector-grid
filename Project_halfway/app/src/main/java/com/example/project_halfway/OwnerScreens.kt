@@ -56,7 +56,7 @@ fun OwnerScreens(ownerId: String, onSignOut: () -> Unit) {
     var screen by remember { mutableStateOf("home") }
 
     // The campsite the owner tapped in My Campsites (used by "details", "waitlist"
-    // and "createLottery")
+    // "createLottery" or "lotteryCampsites")
     var selectedCampsite by remember { mutableStateOf<CampsiteModel?>(null) }
 
     // true while the "Change location" map pop-up is open on the details screen
@@ -115,6 +115,14 @@ fun OwnerScreens(ownerId: String, onSignOut: () -> Unit) {
                                 modifier = Modifier.testTag("create_lottery_button")
                             ) {
                                 Text("Create lottery", color = Color(0xff566C11))
+                            }
+
+                            Spacer(modifier = Modifier.height(8.dp))
+                            OutlinedButton(
+                                onClick = { screen = "lotteryCampsites" },
+                                modifier = Modifier.testTag("manage_lottery_campsites_button")
+                            ) {
+                                Text("Manage lottery campsites", color = Color(0xff566C11))
                             }
                             Spacer(modifier = Modifier.height(8.dp))
                             OutlinedButton(
@@ -182,6 +190,14 @@ fun OwnerScreens(ownerId: String, onSignOut: () -> Unit) {
             }
         }
 
+        "lotteryCampsites" -> {
+            if (chosen != null) {
+                WithBackArrow(onBack = { screen = ownerBackTarget(screen) }) {
+                    LotteryCampsitesScreen(campsiteId = chosen.getId())
+                }
+            }
+        }
+
         else -> {
             OwnerHomeScreenUI(
                 onSignOut = onSignOut,
@@ -194,8 +210,9 @@ fun OwnerScreens(ownerId: String, onSignOut: () -> Unit) {
 
 /**
  * Says which owner screen the back arrow or the phone's back button leads to.
- * Details goes back to My Campsites, the waitlist and Create Lottery go back
- * to details, and everything else goes back to the owner home.
+ * Details goes back to My Campsites, the waitlist, Create Lottery and the
+ * lottery's campsites go back to details, and everything else goes back to
+ * the owner home.
  *
  * @param screen the name of the screen that is open now
  * @return the name of the screen to go back to
@@ -203,7 +220,7 @@ fun OwnerScreens(ownerId: String, onSignOut: () -> Unit) {
 fun ownerBackTarget(screen: String): String {
     return when (screen) {
         "details" -> "mine"
-        "waitlist", "createLottery" -> "details"
+        "waitlist", "createLottery", "lotteryCampsites" -> "details"
         else -> "home"
     }
 }
