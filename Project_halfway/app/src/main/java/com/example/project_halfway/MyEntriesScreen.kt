@@ -48,9 +48,12 @@ private val EntriesGreen = Color(0xFF566C11)
  * Used for US 01.02.01 (see the waiting lists I joined) and
  * US 01.02.02 (leave a waiting list).
  *
+ * The Lottery tab (LotteryResultsTab) shows the entrant's draw results, and
+ * lets a winner reserve dates inside the booking period (US 02.05.01,
+ * US 02.04.04).
+ *
  * Outstanding issues: the Reservations tab (US 01.06.01, 01.06.02, 01.07.01)
- * and the Lottery results tab (US 01.03.01, 01.03.02, 01.04.01) are not done
- * yet, they just show a message for now.
+ * is not done yet, it just shows a message for now.
  *
  * @param onBackClick called when the back arrow is pressed
  */
@@ -101,8 +104,8 @@ fun MyEntriesScreen(onBackClick: () -> Unit) {
             1 -> WaitlistedTab()
             // TODO: Reservations tab (US 01.06.01, 01.06.02, 01.07.01)
             0 -> NotDoneYetText("Your reservations will show here")
-            // TODO: Lottery results tab (US 01.03.01, 01.03.02, 01.04.01)
-            else -> NotDoneYetText("Your lottery results will show here")
+            // Draw results, and reserving dates for a win (US 02.05.01, 02.04.04)
+            else -> LotteryResultsTab()
         }
     }
 }
@@ -259,6 +262,29 @@ object WaitlistHelper {
             }
         }
         return result.sortedBy { it.endDate }
+    }
+
+    /**
+     * The booking period as text, e.g. "2026-11-10 to 2026-11-24", or
+     * "any dates" when the owner didn't set one (US 02.04.04).
+     *
+     * @param lottery the lottery
+     * @return the text for the reserve calendar
+     */
+    fun bookingPeriodText(lottery: Lottery): String {
+        if (lottery.bookingStartDate <= 0L || lottery.bookingEndDate <= 0L) return "any dates"
+        return CampsiteForm.millisToDate(lottery.bookingStartDate) + " to " +
+            CampsiteForm.millisToDate(lottery.bookingEndDate)
+    }
+
+    /**
+     * Text for a winner's reservation, e.g. "Reserved: 2026-11-10 to 2026-11-12".
+     *
+     * @param reservation the reservation
+     * @return the text for the result card
+     */
+    fun reservedText(reservation: Reservation): String {
+        return "Reserved: ${reservation.startDate} to ${reservation.endDate}"
     }
 
     /**

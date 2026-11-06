@@ -47,6 +47,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -59,8 +60,9 @@ import androidx.compose.ui.unit.sp
  * Browse Campsites, My Reservations & Entries and App Policy and Guidelines,
  * in the app's green look (the same as Browse Campsites).
  * Calls onBrowseClick when the user selects the card.
- * The entrant can also edit their name, email and phone number, or delete
- * their profile (US 01.07.03).
+ * The entrant can also edit their name, email and phone number, checked with
+ * ProfileValidator (US 01.07.03), or delete their profile, which also takes
+ * them off every lottery waiting list (US 01.08.01).
  *
  * The profile icon opens the profile page (EntrantProfileActivity).
  *
@@ -81,6 +83,8 @@ fun EntrantHomeScreenUI(
     var emailAddress by remember { mutableStateOf("") }
     var PhoneNumber by remember { mutableStateOf("") }
     var isediting by remember {mutableStateOf(false)}
+    // Shown under the boxes when what was typed isn't valid (US 01.07.03)
+    var editError by remember { mutableStateOf("") }
     var openDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
     var viewPolicyGuidelines by remember {mutableStateOf(false)}
@@ -107,6 +111,16 @@ fun EntrantHomeScreenUI(
                     val entrant  = FirebaseSecurity.auth.currentUser
                     if (entrant!=null){
                         val uid = entrant.uid
+                        // US 01.08.01: first take the entrant off every lottery waiting list
+                        LotteryRepository.removeFromAllWaitingLists(uid) { removed ->
+                        if (!removed) {
+                            // keep the profile, so the entrant isn't left on a list with no profile
+                            Toast.makeText(
+                                context,
+                                "Could not delete your profile. Check your connection and try again.",
+                                Toast.LENGTH_SHORT).show()
+                            openDialog = false
+                        } else
                         //here it deletes the firebase details
                         FirebaseSecurity.db.collection("Users").document(uid).delete()
                             .addOnSuccessListener {
@@ -121,6 +135,7 @@ fun EntrantHomeScreenUI(
                                         onExit()
                                     }
                             }
+                        }
 
 
                     }
@@ -237,6 +252,13 @@ fun EntrantHomeScreenUI(
                     colors = greenFieldColors(),
                     modifier = Modifier.fillMaxWidth()
                 )
+                if (editError.isNotEmpty()) {
+                    Text(
+                        text = editError,
+                        color = Color(0xFFB3261E),
+                        modifier = Modifier.padding(top = 6.dp).testTag("home_edit_error")
+                    )
+                }
                 Spacer(modifier = Modifier.height(12.dp))
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -245,7 +267,12 @@ fun EntrantHomeScreenUI(
                         modifier = Modifier.weight(1f),
                         colors = greenButtonColors(),
                         onClick = {
-                            if (uid != null) {
+                            // US 01.07.03: the same checks as the My Profile page
+                            val error = ProfileValidator.checkInfo(nameEdited, emailEdited, PNedited)
+                            if (error != null) {
+                                editError = error
+                            } else if (uid != null) {
+                                editError = ""
                                 FirebaseSecurity.db.collection("Users").document(uid).update(
                                     mapOf(
                                         "Name" to nameEdited,
@@ -267,7 +294,10 @@ fun EntrantHomeScreenUI(
                         modifier = Modifier.weight(1f),
                         border = BorderStroke(1.dp, AppGreen),
                         colors = greenOutlinedButtonColors(),
-                        onClick = {isediting=false}
+                        onClick = {
+                            editError = ""
+                            isediting = false
+                        }
                     ){
                         Text(text="Back")
                     }
@@ -281,6 +311,11 @@ fun EntrantHomeScreenUI(
                 Button(
                     colors = greenButtonColors(),
                     onClick = {
+                        // start the boxes filled in with the current details
+                        nameEdited = Name
+                        emailEdited = emailAddress
+                        PNedited = PhoneNumber
+                        editError = ""
                         isediting = true
                     }
                 ) {
