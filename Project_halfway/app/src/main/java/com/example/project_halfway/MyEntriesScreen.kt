@@ -191,7 +191,7 @@ fun WaitlistedTab() {
                             message = "You left the waitlist"
 
                             // Remove entrant from the FCM topic:
-                            FirebaseMessaging.getInstance().subscribeToTopic("WAITLIST_CAMPSITE_" +
+                            FirebaseMessaging.getInstance().unsubscribeFromTopic("WAITLIST_CAMPSITE_" +
                                     lottery.getLotteryId())
 
                         } else {
