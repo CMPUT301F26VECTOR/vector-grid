@@ -3,7 +3,11 @@ package com.example.project_halfway
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
-// Tests for the Waitlisted tab helpers (US 01.02.01, 01.02.02)
+/**
+ * **AI assistance (Parneet Kaur):** a part of this code was written with Claude; Parneet tested it and checked that it works.
+ *
+ * Anthropic. (2026). *Claude* (Claude Opus 5.5) [Large language model]. https://claude.ai
+ */
 
 class WaitlistHelperTest {
 

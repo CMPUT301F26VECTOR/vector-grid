@@ -14,7 +14,13 @@ import com.example.project_halfway.ui.theme.Project_halfwayTheme
  * Used for US 01.02.01 and US 01.02.02.
  *
  * Outstanding issues: none known.
+ *
+ *
+ * **AI assistance (Parneet Kaur):** part of this code was written with Claude; Parneet tested it and checked that it works.
+ *
+ * Anthropic. (2026). *Claude* (Claude Opus 5.5) [Large language model]. https://claude.ai
  */
+
 class MyEntriesActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

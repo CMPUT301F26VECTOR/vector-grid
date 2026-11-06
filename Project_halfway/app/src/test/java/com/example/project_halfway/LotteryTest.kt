@@ -16,6 +16,10 @@ import org.junit.Test
  * - removeCampsite: only before registration opens, and never the last campsite
  *
  * Used for US 01.01.06, 01.02.01, 01.02.02 and 02.04.02.
+ *
+ * **AI assistance (Parneet Kaur):** part of this code was written with Claude; Parneet tested it and checked that it works.
+ *
+ * Anthropic. (2026). *Claude* (Claude Opus 5.5) [Large language model]. https://claude.ai
  */
 
 class LotteryTest {
