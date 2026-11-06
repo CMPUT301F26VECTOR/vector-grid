@@ -1,5 +1,7 @@
 package com.example.project_halfway
 
+import com.google.firebase.firestore.SetOptions
+
 
 /**
  * Saves and loads campsites in the Firestore "campsites" collection.
@@ -27,7 +29,8 @@ object CampsiteRepository {
     fun save(campsite: CampsiteModel, onDone: (Boolean) -> Unit = {}) {
         val document = if (campsite.getId() == "") campsites().document() else campsites().document(campsite.getId())
 
-        document.set(toMap(campsite))
+        // merge keeps any other fields already on the document
+        document.set(toMap(campsite), SetOptions.merge())
             .addOnSuccessListener {
                 println("Saved campsite ${document.id}")
                 onDone(true)
@@ -148,7 +151,8 @@ object CampsiteRepository {
             "description" to c.getDescription(),
             "imageUrl" to c.getImageUrl(),
             "availableDateRanges" to c.getAvailableDateRanges(),
-            "tags" to c.getTags()
+            "tags" to c.getTags(),
+            "ratings" to c.getRatings()
         )
     }
 
@@ -177,7 +181,8 @@ object CampsiteRepository {
             services = textList(m, "services"),
             pricePerNight = number(m, "pricePerNight"),
             availableDateRanges = dateRanges(m, "availableDateRanges"),
-            tags = textList(m, "tags")
+            tags = textList(m, "tags"),
+            ratings = numberList(m, "ratings")
         )
     }
 
@@ -190,6 +195,14 @@ object CampsiteRepository {
     private fun number(m: Map<String, Any>, key: String): Double {
         val value = m[key]
         return if (value is Number) value.toDouble() else 0.0
+    }
+
+    private fun numberList(m: Map<String, Any>, key: String): List<Double> {
+        val value = m[key]
+        if (value is List<*>) {
+            return value.filterIsInstance<Number>().map { it.toDouble() }
+        }
+        return listOf()
     }
 
     private fun textList(m: Map<String, Any>, key: String): List<String> {

@@ -7,7 +7,8 @@ package com.example.project_halfway
  * (US 02.01.02); both are 0.0 when there is no pin (see hasMapLocation).
  * Saving and loading is done in CampsiteRepository.
  *
- * Outstanding issues: image upload is not built yet.
+ * Outstanding issues: image upload is not built yet, and entrants can't give
+ * a rating yet (US 01.13.01), so ratings only come from Firestore.
  *
  * @property availableDateRanges the dates the campsite can be booked, as maps
  * with "start" and "end" in YYYY-MM-DD form (not lottery registration dates)
@@ -35,11 +36,37 @@ class CampsiteModel (
     private val availableDateRanges: List<Map<String, String>> = emptyList(),
 
     // Short labels the owner picks, e.g. "Lakeside", "Pet friendly" (US 02.01.02).
-    private val tags: List<String> = emptyList()
+    private val tags: List<String> = emptyList(),
+
+    // Every rating entrants have given, from 1 to 5 stars (US 01.01.04, 01.13.01).
+    private val ratings: List<Double> = emptyList()
 ) {
-    /** Returns the average rating given by users. */
+    /**
+     * Returns the single rating number stored on the campsite. Older campsites
+     * were made with one; the cards now show getAverageRating() instead.
+     */
     public fun getUserRating() : Double {
         return userRating
+    }
+
+    /** Returns every rating entrants have given this campsite. Empty if none. */
+    public fun getRatings() : List<Double> {
+        return ratings
+    }
+
+    /** Returns how many entrants have rated this campsite. */
+    public fun getRatingCount() : Int {
+        return ratings.size
+    }
+
+    /**
+     * Returns the average of the entrants' ratings (US 01.01.04), or 0.0 when
+     * nobody has rated the campsite yet. The summary card and the details page
+     * both use this, so they always show the same rating.
+     */
+    public fun getAverageRating() : Double {
+        if (ratings.isEmpty()) return 0.0
+        return ratings.sum() / ratings.size
     }
     /** Returns the campsite's name, for example "Site 56A". */
     public fun getCampsiteName() : String {

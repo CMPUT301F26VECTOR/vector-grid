@@ -43,4 +43,9 @@ class OwnerScreensTest {
     fun unknownScreen_goesHome() {
         assertEquals("home", ownerBackTarget("something else"))
     }
+
+    @Test
+    fun editGoesBackToDetails() {
+        assertEquals("details", ownerBackTarget("edit"))
+    }
 }

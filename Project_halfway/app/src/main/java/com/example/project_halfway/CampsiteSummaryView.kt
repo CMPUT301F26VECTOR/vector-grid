@@ -43,8 +43,10 @@ private val CardGrey = Color(0xFF5F6368)
  * owner's Registered Campsites list. The card fills the width it is given, so
  * the list decides the spacing around it.
  *
- * Outstanding issues: the rating is the stored userRating value, because
- * entrants can't rate campsites yet (US 01.13.01).
+ * The rating is the average of the entrants' ratings, or "No ratings yet"
+ * (US 01.01.04), the same value the details page shows.
+ *
+ * Outstanding issues: entrants can't give ratings in the app yet (US 01.13.01).
  *
  * @param campsite the campsite to show
  * @param onClick called when the card is tapped. The screen showing the card
@@ -81,7 +83,7 @@ fun CampsiteDescriptionCard(
                     modifier = Modifier.weight(1f)
                 )
                 Spacer(Modifier.width(8.dp))
-                CompactRating(campsite.getUserRating())
+                CompactRating(campsite.getAverageRating())
             }
 
             // "Whistlers Campground · Jasper, Alberta"
@@ -129,7 +131,7 @@ fun CampsiteDescriptionCard(
     }
 }
 
-// One star and the rating ("4.0"), or "New" when the campsite has no rating yet
+// One star and the rating ("4.0"), or "No ratings yet" when nobody has rated it
 @Composable
 private fun CompactRating(rating: Double) {
     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -166,10 +168,10 @@ private fun InfoLine(
  * Text for the compact rating on the card.
  *
  * @param rating the campsite's rating, 0.0 when it has none
- * @return "New" for no rating, otherwise the rating with one decimal, e.g. "4.0"
+ * @return "No ratings yet" for no rating, otherwise the rating with one decimal, e.g. "4.0"
  */
 fun ratingText(rating: Double): String =
-    if (rating <= 0.0) "New" else String.format(Locale.US, "%.1f", rating)
+    if (rating <= 0.0) "No ratings yet" else String.format(Locale.US, "%.1f", rating)
 
 /**
  * The campground and location on one line, e.g. "Whistlers Campground · Jasper, AB".
@@ -230,14 +232,15 @@ private fun CampsiteDescriptionCardPreview() {
         longitude = -118.077,
         latitude = 52.8507,
         occupancy = 6,
-        userRating = 4.0,
+        userRating = 0.0,
         description = "",
         imageUrl = "",
         pricePerNight = 38.5,
         availableDateRanges = listOf(
             mapOf("start" to "2027-07-02", "end" to "2027-07-09"),
             mapOf("start" to "2027-08-13", "end" to "2027-08-20")
-        )
+        ),
+        ratings = listOf(4.0, 5.0, 3.0)
     )
     val bare = CampsiteModel("Site 3", "", "Elk Island National Park, AB", 0.0, 0.0, 2, 0.0, "", "")
     Project_halfwayTheme {
