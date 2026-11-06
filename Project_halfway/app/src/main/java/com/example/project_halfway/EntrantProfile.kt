@@ -1,11 +1,5 @@
 package com.example.project_halfway
 
-//data class EntrantProfile (
-//    val Name: String,
-//    val : String,
-//    val emailAddress:String,
-//    val profilePicture: String
-//)
 /**
  * An entrant's profile, saved in the Firestore "Users" collection under
  * their user id (see EntrantAuthManager).

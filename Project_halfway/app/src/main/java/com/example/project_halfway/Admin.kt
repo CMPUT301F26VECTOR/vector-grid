@@ -1,8 +1,8 @@
 package com.example.project_halfway
 
 /**
- * An administrator account, who can look after every entrant, owner and
- * campsite in the app (planned from the CRC cards).
+ * An administrator account, who can look after every entrant, owner,
+ * campsite and uploaded image in the app (planned from the CRC cards).
  *
  * Outstanding issues: not used by any screen yet and not saved to Firestore.
  * The password is stored as plain text; real sign-in should go through

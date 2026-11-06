@@ -66,3 +66,15 @@ fun CampsiteDetailedPreview() {
         CampsiteDetailedCard(campsite, true,{},{})
     }
 }
+/** Android Studio preview of CampsiteCalender with a sample Calender. */
+@Preview(showBackground = true)
+@Composable
+private fun CampsiteCalendarPreview() {
+    Project_halfwayTheme {
+        CampsiteCalendar(
+            availableDateRanges = listOf(
+                mapOf("start" to "2025-09-09", "end" to "2025-09-13")
+            )
+        )
+    }
+}
