@@ -33,6 +33,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.AlertDialog
 
 /**
  * The Lottery tab of My Reservations & Entries: the entrant's draw results
@@ -55,6 +59,8 @@ fun LotteryResultsTab() {
     var message by remember { mutableStateOf("") }
     // the win the entrant is reserving dates for, while the calendar is open
     var reserving by remember { mutableStateOf<LotteryResultNotification?>(null) }
+    // The winning offer the entrant wants to decline (US 01.04.03).
+    var declining by remember { mutableStateOf<LotteryResultNotification?>(null) }
 
     LaunchedEffect(entrantId) {
         if (entrantId == "") {
@@ -96,7 +102,9 @@ fun LotteryResultsTab() {
                 message = result.message,
                 isWin = result.isWin(),
                 reservedText = reservation?.let { WaitlistHelper.reservedText(it) },
-                onReserve = { reserving = result }
+                offerStatus = result.offerStatus,
+                onReserve = { reserving = result },
+                onDecline = { declining = result }
             )
         }
 
@@ -118,6 +126,65 @@ fun LotteryResultsTab() {
             }
         )
     }
+    // Confirms that the entrant wants to decline their winning offer (US 01.04.03).
+    val offer = declining
+
+    if (offer != null) {
+        var decliningInProgress by remember { mutableStateOf(false) }
+
+        AlertDialog(
+            onDismissRequest = {
+                if (!decliningInProgress) declining = null
+            },
+            title = {
+                Text("Decline reservation offer?")
+            },
+            text = {
+                Text("Are you sure you want to decline? You won't be able to reserve dates for this offer afterward.")
+            },
+            confirmButton = {
+                TextButton(
+                    enabled = !decliningInProgress,
+                    onClick = {
+                        decliningInProgress = true
+
+                        ReservationRepository.declineOffer(
+                            notificationId = offer.id,
+                            entrantId = entrantId
+                        ) { success ->
+                            decliningInProgress = false
+
+                            if (success) {
+                                val index = results.indexOfFirst { it.id == offer.id }
+
+                                if (index != -1) {
+                                    results[index] = results[index].copy(
+                                        offerStatus = LotteryResultNotification.OFFER_DECLINED
+                                    )
+                                }
+
+                                declining = null
+                                message = "Reservation offer declined"
+                            } else {
+                                message = "Could not decline the offer. Please try again."
+                                declining = null
+                            }
+                        }
+                    }
+                ) {
+                    Text("Decline", color = Color.Red)
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    enabled = !decliningInProgress,
+                    onClick = { declining = null }
+                ) {
+                    Text("Keep offer")
+                }
+            }
+        )
+    }
 }
 
 /**
@@ -129,7 +196,9 @@ fun LotteryResultsTab() {
  * @param message the notification text
  * @param isWin true if the entrant won
  * @param reservedText e.g. "Reserved: 2026-11-10 to 2026-11-12", or null if not reserved yet
+ * @param offerStatus the winner's reservation offer status (US 01.04.03)
  * @param onReserve called when Reserve dates is pressed
+ * @param onDecline called when Decline offer is pressed (US 01.04.03)
  */
 @Composable
 fun LotteryResultCard(
@@ -137,7 +206,9 @@ fun LotteryResultCard(
     message: String,
     isWin: Boolean,
     reservedText: String?,
-    onReserve: () -> Unit
+    offerStatus: String,
+    onReserve: () -> Unit,
+    onDecline: () -> Unit
 ) {
     Card(
         modifier = Modifier
@@ -163,13 +234,39 @@ fun LotteryResultCard(
                         color = AppGreen,
                         modifier = Modifier.padding(top = 8.dp).testTag("reserved_text")
                     )
+                } else if (offerStatus == LotteryResultNotification.OFFER_DECLINED) {
+
+                    /** Shows that the winner has declined their reservation offer. */
+                    Text(
+                        text = "Offer declined",
+                        color = Color.Gray,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier
+                            .padding(top = 8.dp)
+                            .testTag("offer_declined")
+                    )
+
                 } else {
-                    Button(
-                        onClick = onReserve,
-                        colors = greenButtonColors(),
-                        modifier = Modifier.padding(top = 8.dp).testTag("reserve_button")
+
+                    /** Allows a winner to reserve dates or decline their offer (US 01.04.03). */
+                    Row(
+                        modifier = Modifier.padding(top = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Text("Reserve dates")
+                        Button(
+                            onClick = onReserve,
+                            colors = greenButtonColors(),
+                            modifier = Modifier.testTag("reserve_button")
+                        ) {
+                            Text("Reserve dates")
+                        }
+
+                        OutlinedButton(
+                            onClick = onDecline,
+                            modifier = Modifier.testTag("decline_button")
+                        ) {
+                            Text("Decline offer")
+                        }
                     }
                 }
             }
@@ -296,7 +393,24 @@ private fun BookingPeriodPicker(
 @Composable
 private fun LotteryResultCardPreview() {
     Column(Modifier.padding(16.dp)) {
-        LotteryResultCard("Site 7 – Upper Waterton", LotteryResultNotification.WON_MESSAGE, true, null, {})
-        LotteryResultCard("Site 42 - Lakeview", LotteryResultNotification.NOT_SELECTED_MESSAGE, false, null, {})
+        LotteryResultCard(
+            "Site 7 – Upper Waterton",
+            LotteryResultNotification.WON_MESSAGE,
+            true,
+            null,
+            LotteryResultNotification.OFFER_PENDING,
+            {},
+            {}
+        )
+
+        LotteryResultCard(
+            "Site 42 - Lakeview",
+            LotteryResultNotification.NOT_SELECTED_MESSAGE,
+            false,
+            null,
+            LotteryResultNotification.OFFER_PENDING,
+            {},
+            {}
+        )
     }
 }
