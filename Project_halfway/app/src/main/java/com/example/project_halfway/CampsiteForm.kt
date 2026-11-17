@@ -15,8 +15,16 @@ import java.time.ZoneOffset
  * It is also used to edit a saved campsite (US 02.01.04): fromCampsite fills
  * the form in, and toCampsite keeps the campsite's id, photo and ratings.
  *
- * Outstanding issues: image upload is not built yet, so a new campsite's
- * imageUrl is saved as "".
+ * The optional campsite image (US 02.01.02) is uploaded by
+ * CampsiteImageUploader; the form only keeps the link it gives back.
+ * canEdit makes sure an owner only edits their own campsites (US 02.01.03).
+ *
+ * Outstanding issues: none known.
+ *
+ * **AI assistance (Samarth Sathya Karthik):** the imageUrl field and canEdit
+ * were implemented using Claude AI; Samarth tested them and checked that they work.
+ *
+ * Anthropic. (2026). *Claude* (Claude Opus 5.5) [Large language model]. https://claude.ai
  *
  * @property name the campsite's name, e.g. "Site 56A" (required)
  * @property campgroundName the campground the site belongs to
@@ -31,6 +39,8 @@ import java.time.ZoneOffset
  * @property longitude map pin longitude, typed as text (optional, -180 to 180)
  * @property availableDates date ranges as maps with "start" and "end" in
  * YYYY-MM-DD form, the same shape CampSearch.filterByDates reads
+ * @property imageUrl link to the uploaded campsite image (US 02.01.02), "" for
+ * no image, or null to keep whatever image the campsite already has
  */
 data class CampsiteForm(
     val name: String = "",
@@ -44,7 +54,8 @@ data class CampsiteForm(
     val pricePerNight: String = "",
     val latitude: String = "",
     val longitude: String = "",
-    val availableDates: List<Map<String, String>> = emptyList()
+    val availableDates: List<Map<String, String>> = emptyList(),
+    val imageUrl: String? = null
 ) {
 
     /**
@@ -122,7 +133,8 @@ data class CampsiteForm(
             occupancy = occupancy.trim().toInt(),
             userRating = existing?.getUserRating() ?: 0.0, // no ratings yet for a new campsite
             description = description.trim(),
-            imageUrl = existing?.getImageUrl() ?: "",
+            // The new image if the owner uploaded or removed one, otherwise the old one
+            imageUrl = imageUrl ?: existing?.getImageUrl() ?: "",
             id = existing?.getId() ?: "",
             ownerId = ownerId,
             type = type.trim(),
@@ -139,6 +151,19 @@ data class CampsiteForm(
      * dates) into the values a CampsiteModel stores.
      */
     companion object {
+
+        /**
+         * Tells whether an owner may edit a campsite (US 02.01.03): only the
+         * owner who registered it can.
+         *
+         * @param campsite the campsite to edit
+         * @param ownerId user id of the signed in owner
+         * @return true if ownerId is not blank and is the campsite's owner
+         */
+        fun canEdit(campsite: CampsiteModel, ownerId: String): Boolean {
+            if (ownerId.isBlank()) return false
+            return campsite.getOwnerId() == ownerId
+        }
 
         /**
          * Fills the form in from a saved campsite, so the owner can edit it
