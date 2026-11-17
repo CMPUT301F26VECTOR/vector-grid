@@ -12,6 +12,11 @@ import org.junit.runner.RunWith
 
 // Intent tests for joining / leaving a lottery waiting list
 // (US 01.01.06, 01.02.01, 01.02.02). Runs on an emulator or phone.
+/**
+* **AI assistance (Parneet Kaur):** a part of this code was written with Claude; Parneet tested it and checked that it works.
+*
+* Anthropic. (2026). *Claude* (Claude Opus 5.5) [Large language model]. https://claude.ai
+*/
 
 @RunWith(AndroidJUnit4::class)
 class LotteryButtonTest {

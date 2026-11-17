@@ -34,7 +34,13 @@ import kotlin.random.Random
  * @param winners ids picked by the draw (empty until the draw happens)
  * @param notSelected ids that joined but were not picked (empty until the draw happens)
  * @param isDrawn true if the winners were already drawn
+ *
+ *
+ * **AI assistance (Parneet Kaur):** part of this code was written with Claude; Parneet tested it and checked that it works.
+ *
+ * Anthropic. (2026). *Claude* (Claude Opus 5.5) [Large language model]. https://claude.ai
  */
+
 class Lottery(
     val id: String,
     val campsiteId: String,

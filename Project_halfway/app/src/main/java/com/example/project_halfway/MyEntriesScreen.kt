@@ -56,7 +56,13 @@ private val EntriesGreen = Color(0xFF566C11)
  * is not done yet, it just shows a message for now.
  *
  * @param onBackClick called when the back arrow is pressed
+ *
+ *
+ * **AI assistance (Parneet Kaur):** part of this code was written with Claude; Parneet tested it and checked that it works.
+ *
+ * Anthropic. (2026). *Claude* (Claude Opus 5.5) [Large language model]. https://claude.ai
  */
+
 @Composable
 fun MyEntriesScreen(onBackClick: () -> Unit) {
     var selectedTab by remember { mutableStateOf(1) }

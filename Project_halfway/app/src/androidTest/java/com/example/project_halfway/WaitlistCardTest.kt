@@ -10,8 +10,20 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-// Intent test for leaving a waitlist from My Reservations & Entries (US 01.02.02).
-// Runs on an emulator or phone.
+/**
+ * Intent test for WaitlistCard on the Waitlisted tab of My Reservations & Entries.
+ *
+ * It runs on an emulator or phone.
+ *
+ * What it checks: the card shows the campsite name, days left and people on
+ * the list, and pressing Leave Waitlist calls onLeave.
+ *
+ * Used for US 01.02.02.
+ *
+ * **AI assistance (Parneet Kaur):** this code was written with Claude; Parneet tested it and checked that it works.
+ *
+ * Anthropic. (2026). *Claude* (Claude Opus 5.5) [Large language model]. https://claude.ai
+ */
 
 @RunWith(AndroidJUnit4::class)
 class WaitlistCardTest {

@@ -38,7 +38,13 @@ import androidx.compose.ui.unit.dp
  * leaves while the screen is open.
  *
  * @param campsiteId id of the campsite being looked at
+ *
+ *
+ * **AI assistance (Parneet Kaur):** part of this code was written with Claude; Parneet tested it and checked that it works.
+ *
+ * Anthropic. (2026). *Claude* (Claude Opus 5.5) [Large language model]. https://claude.ai
  */
+
 @Composable
 fun LotterySection(campsiteId: String) {
  

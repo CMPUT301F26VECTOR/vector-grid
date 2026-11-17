@@ -14,7 +14,22 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-// Intent tests for updating the profile (US 01.07.03). Runs on an emulator or phone.
+/**
+ * Intent tests for ProfileEditForm, the edit boxes on My Profile.
+ *
+ * They run on an emulator or phone.
+ *
+ * What they check:
+ * - The boxes start filled in, and Save sends the new phone number.
+ * - A bad email shows an error and nothing is saved.
+ * - Back calls onCancel.
+ *
+ * Used for US 01.07.03.
+ *
+ * **AI assistance (Parneet Kaur):** this code was written with Claude; Parneet tested it and checked that it works.
+ *
+ * Anthropic. (2026). *Claude* (Claude Opus 5.5) [Large language model]. https://claude.ai
+ */
 
 @RunWith(AndroidJUnit4::class)
 class ProfileEditFormTest {

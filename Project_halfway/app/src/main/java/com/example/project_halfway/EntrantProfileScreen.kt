@@ -43,7 +43,12 @@ import androidx.compose.ui.unit.sp
  * Outstanding issues: the profile picture can't be changed yet.
  *
  * @param onBackClick called when the back arrow is pressed
+ *
+ * **AI assistance (Parneet Kaur):** part of this code was written with Claude; Parneet tested it and checked that it works.
+ *
+ * Anthropic. (2026). *Claude* (Claude Opus 5.5) [Large language model]. https://claude.ai
  */
+
 @Composable
 fun EntrantProfileScreen(onBackClick: () -> Unit) {
     var name by remember { mutableStateOf("") }
