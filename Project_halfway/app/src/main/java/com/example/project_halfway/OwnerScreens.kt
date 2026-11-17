@@ -36,12 +36,22 @@ import com.example.project_halfway.CampsiteRepository.updateLocation
  * waitlist and winners (US 02.05.01, US 02.09.01) and Create Lottery
  * (US 02.04.01, US 02.04.03, US 02.04.04, US 02.04.05, US 02.04.07).
  *
+ * Part 4 screens: Reservations with Active, Past and Cancelled tabs
+ * (US 02.07.01, 02.07.02, 02.07.03), a campsite's booked dates (US 02.06.01)
+ * and Edit Lottery (US 02.04.06). Only the campsite's own owner sees the Edit
+ * details button (US 02.01.03).
+ *
  * It works like AuthGate: one variable holds the name of the open screen, and
  * each screen gets callbacks that change it. The back arrows and the phone's
  * back button go one step back, as ownerBackTarget says.
  *
  * Outstanding issues: which screen is open is kept in memory only, so turning
  * the phone or restarting the app returns to the owner home.
+ *
+ * **AI assistance (Samarth Sathya Karthik):** the Part 4 routes and buttons
+ * were implemented using Claude AI; Samarth tested them and checked that they work.
+ *
+ * Anthropic. (2026). *Claude* (Claude Opus 5.5) [Large language model]. https://claude.ai
  *
  * @param ownerId user id of the signed in owner; saved on new campsites and
  * used to load My Campsites
@@ -51,7 +61,8 @@ import com.example.project_halfway.CampsiteRepository.updateLocation
 fun OwnerScreens(ownerId: String, onSignOut: () -> Unit) {
 
     // Which owner screen is open: "home", "register", "mine", "details", "edit",
-    // "waitlist" or "createLottery"
+    // "waitlist", "createLottery", "lotteryCampsites", "reservations",
+    // "bookedDates" or "editLottery"
     var screen by remember { mutableStateOf("home") }
 
     // The campsite the owner tapped in My Campsites (used by "details", "waitlist"
@@ -108,13 +119,24 @@ fun OwnerScreens(ownerId: String, onSignOut: () -> Unit) {
                             ) {
                                 Text("View waitlist and winners")
                             }
+                            // US 02.01.04 / 02.01.03: edit the campsite's details,
+                            // only shown to the owner who registered it
+                            if (CampsiteForm.canEdit(chosen, ownerId)) {
+                                Spacer(modifier = Modifier.height(8.dp))
+                                OutlinedButton(
+                                    onClick = { screen = "edit" },
+                                    modifier = Modifier.testTag("edit_campsite_button")
+                                ) {
+                                    Text("Edit details", color = Color(0xff566C11))
+                                }
+                            }
+                            // US 02.06.01: calendar of the booked nights
                             Spacer(modifier = Modifier.height(8.dp))
-                            // US 02.01.04: edit the campsite's details
                             OutlinedButton(
-                                onClick = { screen = "edit" },
-                                modifier = Modifier.testTag("edit_campsite_button")
+                                onClick = { screen = "bookedDates" },
+                                modifier = Modifier.testTag("booked_dates_button")
                             ) {
-                                Text("Edit details", color = Color(0xff566C11))
+                                Text("View booked dates", color = Color(0xff566C11))
                             }
                             Spacer(modifier = Modifier.height(8.dp))
                             OutlinedButton(
@@ -122,6 +144,15 @@ fun OwnerScreens(ownerId: String, onSignOut: () -> Unit) {
                                 modifier = Modifier.testTag("create_lottery_button")
                             ) {
                                 Text("Create lottery", color = Color(0xff566C11))
+                            }
+
+                            // US 02.04.06: change a lottery this campsite is in
+                            Spacer(modifier = Modifier.height(8.dp))
+                            OutlinedButton(
+                                onClick = { screen = "editLottery" },
+                                modifier = Modifier.testTag("edit_lottery_button")
+                            ) {
+                                Text("Edit lottery", color = Color(0xff566C11))
                             }
 
                             Spacer(modifier = Modifier.height(8.dp))
@@ -220,11 +251,34 @@ fun OwnerScreens(ownerId: String, onSignOut: () -> Unit) {
             }
         }
 
+        // US 02.07.01, 02.07.02, 02.07.03: draws its own green header with the back arrow
+        "reservations" -> OwnerReservationsScreen(
+            ownerId = ownerId,
+            onBackClick = { screen = ownerBackTarget(screen) }
+        )
+
+        // US 02.06.01
+        "bookedDates" -> {
+            if (chosen != null) {
+                BookedDatesScreen(campsite = chosen, onBackClick = { screen = ownerBackTarget(screen) })
+            }
+        }
+
+        // US 02.04.06
+        "editLottery" -> {
+            if (chosen != null) {
+                WithBackArrow(onBack = { screen = ownerBackTarget(screen) }) {
+                    EditLotteryScreen(campsiteId = chosen.getId(), ownerId = ownerId)
+                }
+            }
+        }
+
         else -> {
             OwnerHomeScreenUI(
                 onSignOut = onSignOut,
                 onRegisterClick = { screen = "register" },
-                onMyCampsitesClick = { screen = "mine" }
+                onMyCampsitesClick = { screen = "mine" },
+                onReservationsClick = { screen = "reservations" }
             )
         }
     }
@@ -232,9 +286,9 @@ fun OwnerScreens(ownerId: String, onSignOut: () -> Unit) {
 
 /**
  * Says which owner screen the back arrow or the phone's back button leads to.
- * Details goes back to My Campsites, the waitlist, Create Lottery, the
- * lottery's campsites and Edit go back to details, and everything else goes
- * back to the owner home.
+ * Details goes back to My Campsites; the waitlist, Create Lottery, the
+ * lottery's campsites, Edit, booked dates and Edit Lottery go back to details; and everything else (including Reservations) goes back to
+ * the owner home.
  *
  * @param screen the name of the screen that is open now
  * @return the name of the screen to go back to
@@ -242,7 +296,8 @@ fun OwnerScreens(ownerId: String, onSignOut: () -> Unit) {
 fun ownerBackTarget(screen: String): String {
     return when (screen) {
         "details" -> "mine"
-        "waitlist", "createLottery", "lotteryCampsites", "edit" -> "details"
+        "waitlist", "createLottery", "lotteryCampsites", "edit",
+        "bookedDates", "editLottery" -> "details"
         else -> "home"
     }
 }
