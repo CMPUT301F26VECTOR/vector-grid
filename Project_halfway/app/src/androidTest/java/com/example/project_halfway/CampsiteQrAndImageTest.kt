@@ -12,8 +12,8 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 /**
- * UI tests for the image section of Register / Edit Campsite (US 02.01.02)
- * and owner-only editing (US 02.01.03). No Firestore is needed.
+ * UI tests for the campsite QR code screen (US 02.02.01) and the image section
+ * of Register / Edit Campsite (US 02.01.02, 02.01.03). No Firestore is needed.
  *
  * **AI assistance (Samarth Sathya Karthik):** these tests were implemented using
  * Claude AI; Samarth ran them and checked that they pass.
@@ -21,7 +21,7 @@ import org.junit.runner.RunWith
  * Anthropic. (2026). *Claude* (Claude Opus 5.5) [Large language model]. https://claude.ai
  */
 @RunWith(AndroidJUnit4::class)
-class CampsiteImageScreenTest {
+class CampsiteQrAndImageTest {
 
     @get:Rule
     val composeRule = createComposeRule()
@@ -31,6 +31,15 @@ class CampsiteImageScreenTest {
         longitude = 0.0, latitude = 0.0, occupancy = 4, description = "Shady",
         imageUrl = imageUrl, id = "camp1", ownerId = ownerId
     )
+
+    @Test
+    fun qrScreenShowsTheCodeAndItsLink() {
+        composeRule.setContent { CampsiteQrScreen(campsite = campsite()) }
+
+        composeRule.onNodeWithTag("campsite_qr_image").assertIsDisplayed()
+        composeRule.onNodeWithTag("campsite_qr_link").assertTextEquals("campermax://campsite/camp1")
+        composeRule.onNodeWithTag("campsite_qr_share").assertIsDisplayed()
+    }
 
     @Test
     fun aNewCampsiteHasNoImageAndAnUploadButton() {

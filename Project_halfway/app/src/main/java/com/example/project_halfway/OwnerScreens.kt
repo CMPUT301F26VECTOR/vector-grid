@@ -37,9 +37,9 @@ import com.example.project_halfway.CampsiteRepository.updateLocation
  * (US 02.04.01, US 02.04.03, US 02.04.04, US 02.04.05, US 02.04.07).
  *
  * Part 4 screens: Reservations with Active, Past and Cancelled tabs
- * (US 02.07.01, 02.07.02, 02.07.03), a campsite's booked dates (US 02.06.01)
- * and Edit Lottery (US 02.04.06). Only the campsite's own owner sees the Edit
- * details button (US 02.01.03).
+ * (US 02.07.01, 02.07.02, 02.07.03), a campsite's booked dates (US 02.06.01),
+ * Edit Lottery (US 02.04.06) and the campsite's QR code (US 02.02.01). Only the
+ * campsite's own owner sees the Edit details button (US 02.01.03).
  *
  * It works like AuthGate: one variable holds the name of the open screen, and
  * each screen gets callbacks that change it. The back arrows and the phone's
@@ -62,7 +62,7 @@ fun OwnerScreens(ownerId: String, onSignOut: () -> Unit) {
 
     // Which owner screen is open: "home", "register", "mine", "details", "edit",
     // "waitlist", "createLottery", "lotteryCampsites", "reservations",
-    // "bookedDates" or "editLottery"
+    // "bookedDates", "editLottery" or "qr"
     var screen by remember { mutableStateOf("home") }
 
     // The campsite the owner tapped in My Campsites (used by "details", "waitlist"
@@ -137,6 +137,14 @@ fun OwnerScreens(ownerId: String, onSignOut: () -> Unit) {
                                 modifier = Modifier.testTag("booked_dates_button")
                             ) {
                                 Text("View booked dates", color = Color(0xff566C11))
+                            }
+                            // US 02.02.01: the campsite's QR code
+                            Spacer(modifier = Modifier.height(8.dp))
+                            OutlinedButton(
+                                onClick = { screen = "qr" },
+                                modifier = Modifier.testTag("show_qr_button")
+                            ) {
+                                Text("Show QR code", color = Color(0xff566C11))
                             }
                             Spacer(modifier = Modifier.height(8.dp))
                             OutlinedButton(
@@ -273,6 +281,13 @@ fun OwnerScreens(ownerId: String, onSignOut: () -> Unit) {
             }
         }
 
+        // US 02.02.01
+        "qr" -> {
+            if (chosen != null) {
+                CampsiteQrScreen(campsite = chosen, onBackClick = { screen = ownerBackTarget(screen) })
+            }
+        }
+
         else -> {
             OwnerHomeScreenUI(
                 onSignOut = onSignOut,
@@ -287,7 +302,8 @@ fun OwnerScreens(ownerId: String, onSignOut: () -> Unit) {
 /**
  * Says which owner screen the back arrow or the phone's back button leads to.
  * Details goes back to My Campsites; the waitlist, Create Lottery, the
- * lottery's campsites, Edit, booked dates and Edit Lottery go back to details; and everything else (including Reservations) goes back to
+ * lottery's campsites, Edit, booked dates, Edit Lottery and the QR code go
+ * back to details; and everything else (including Reservations) goes back to
  * the owner home.
  *
  * @param screen the name of the screen that is open now
@@ -297,7 +313,7 @@ fun ownerBackTarget(screen: String): String {
     return when (screen) {
         "details" -> "mine"
         "waitlist", "createLottery", "lotteryCampsites", "edit",
-        "bookedDates", "editLottery" -> "details"
+        "bookedDates", "editLottery", "qr" -> "details"
         else -> "home"
     }
 }

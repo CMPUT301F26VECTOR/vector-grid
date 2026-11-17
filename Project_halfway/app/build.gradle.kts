@@ -72,6 +72,8 @@ dependencies {
     implementation("com.google.firebase:firebase-firestore")
     // Campsite images are uploaded to Firebase Storage (US 02.01.02)
     implementation("com.google.firebase:firebase-storage")
+    // ZXing core (Apache 2.0) draws each campsite's QR code (US 02.02.01)
+    implementation("com.google.zxing:core:3.5.4")
     // Google Maps in Compose: map previews and the location picker
     implementation(libs.maps.compose)
     testImplementation(libs.junit)

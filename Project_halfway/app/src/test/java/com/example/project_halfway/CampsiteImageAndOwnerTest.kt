@@ -61,6 +61,7 @@ class CampsiteImageAndOwnerTest {
     fun theNewScreensGoBackToTheRightPlace() {
         assertEquals("details", ownerBackTarget("bookedDates"))
         assertEquals("details", ownerBackTarget("editLottery"))
+        assertEquals("details", ownerBackTarget("qr"))
         assertEquals("home", ownerBackTarget("reservations"))
     }
 }
