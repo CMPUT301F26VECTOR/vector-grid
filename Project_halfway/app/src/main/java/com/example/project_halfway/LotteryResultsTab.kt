@@ -1,6 +1,9 @@
 package com.example.project_halfway
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -11,6 +14,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DateRangePicker
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -26,6 +30,7 @@ import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
@@ -230,6 +235,14 @@ private fun BookingPeriodPicker(
     onDismiss: () -> Unit,
     onReserved: (Reservation) -> Unit
 ) {
+    var campsite by remember { mutableStateOf<CampsiteModel?>(null) }
+    LaunchedEffect(lottery.campsiteId) {
+        CampsiteRepository.getById(lottery.campsiteId) { found ->
+            campsite = found
+        }
+    }
+    val rulesText = campsite?.getRules() ?: DEFAULT_CAMPSITE_RULES
+
     val bookable = remember(lottery) {
         object : SelectableDates {
             override fun isSelectableDate(utcTimeMillis: Long): Boolean = lottery.isBookableDay(utcTimeMillis)
@@ -239,9 +252,10 @@ private fun BookingPeriodPicker(
         initialDisplayedMonthMillis = if (lottery.bookingStartDate > 0L) lottery.bookingStartDate else null,
         selectableDates = bookable
     )
+    var rulesAgreed by remember { mutableStateOf(false) }
     val start = state.selectedStartDateMillis
     val end = state.selectedEndDateMillis
-    val valid = start != null && end != null && lottery.isWithinBookingPeriod(start, end)
+    val valid = start != null && end != null && lottery.isWithinBookingPeriod(start, end) && rulesAgreed
     var saving by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf("") }
 
@@ -259,7 +273,8 @@ private fun BookingPeriodPicker(
                             campsiteId = lottery.campsiteId,
                             startDate = CampsiteForm.millisToDate(start),
                             endDate = CampsiteForm.millisToDate(end),
-                            createdAt = System.currentTimeMillis()
+                            createdAt = System.currentTimeMillis(),
+                            rulesAgreed = rulesAgreed
                         )
                         ReservationRepository.save(reservation) { saved ->
                             saving = false
@@ -273,7 +288,7 @@ private fun BookingPeriodPicker(
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel", color = AppGreen) } }
     ) {
-        Column {
+        Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
             Text(
                 "Booking period: " + WaitlistHelper.bookingPeriodText(lottery),
                 fontWeight = FontWeight.Bold,
@@ -287,6 +302,40 @@ private fun BookingPeriodPicker(
                 modifier = Modifier.height(460.dp),
                 showModeToggle = false
             )
+
+            Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)) {
+                Text(
+                    text = "Campsite Rules & Policies",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp,
+                    color = Color.Black
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = rulesText,
+                    fontSize = 13.sp,
+                    color = Color.DarkGray
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { rulesAgreed = !rulesAgreed }
+                ) {
+                    Checkbox(
+                        checked = rulesAgreed,
+                        onCheckedChange = { rulesAgreed = it },
+                        modifier = Modifier.testTag("rules_checkbox")
+                    )
+                    Text(
+                        text = "I have read and agree to the campsite rules",
+                        fontSize = 14.sp,
+                        color = Color.Black,
+                        modifier = Modifier.padding(start = 4.dp)
+                    )
+                }
+            }
         }
     }
 }

@@ -20,6 +20,16 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 
 /**
+ * Default rules and policies for campsites when an owner has not specified custom rules.
+ */
+val DEFAULT_CAMPSITE_RULES = """
+    • Respect quiet hours (9:00 PM – 6:00 AM).
+    • Clean out all garbage.
+    • Campfires permitted only in designated areas.
+    • Check-in after 3:00 PM, Check-out by 10:00 AM.
+""".trimIndent()
+
+/**
  * The entrant's App Policy and Guidelines screen (US 01.11.01): the account,
  * lottery and reservation rules, opened from the entrant home. Uses the app's
  * green look (the same as Browse Campsites).
@@ -54,7 +64,7 @@ fun AppPolicyAndGuidelines(onBack: () -> Unit) {
             Text(text = "If you have joined a lottery the reservation is not guranteed", color = Color(0xFF3C4043))
 
             PanelLabel("3. Reservation Guidelines")
-            Text("The reservation Rules must be followed", color = Color(0xFF3C4043))
+            Text(DEFAULT_CAMPSITE_RULES, color = Color(0xFF3C4043))
         }
 
         Spacer(modifier = Modifier.height(12.dp))

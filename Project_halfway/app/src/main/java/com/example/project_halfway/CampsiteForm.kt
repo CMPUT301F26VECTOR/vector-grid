@@ -3,6 +3,7 @@ package com.example.project_halfway
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
+import java.time.zone.ZoneRules
 
 /**
  * Everything the owner has typed on the Register Campsite screen
@@ -41,6 +42,7 @@ import java.time.ZoneOffset
  * YYYY-MM-DD form, the same shape CampSearch.filterByDates reads
  * @property imageUrl link to the uploaded campsite image (US 02.01.02), "" for
  * no image, or null to keep whatever image the campsite already has
+ * @property rules the campsite's rules and policies
  */
 data class CampsiteForm(
     val name: String = "",
@@ -55,7 +57,8 @@ data class CampsiteForm(
     val latitude: String = "",
     val longitude: String = "",
     val availableDates: List<Map<String, String>> = emptyList(),
-    val imageUrl: String? = null
+    val imageUrl: String? = null,
+    val rules: String = ""
 ) {
 
     /**
@@ -142,7 +145,8 @@ data class CampsiteForm(
             pricePerNight = pricePerNight.trim().toDoubleOrNull() ?: 0.0,
             availableDateRanges = availableDates,
             tags = splitList(tags),
-            ratings = existing?.getRatings() ?: emptyList()
+            ratings = existing?.getRatings() ?: emptyList(),
+            rules = rules.trim()
         )
     }
 
@@ -187,7 +191,8 @@ data class CampsiteForm(
                 pricePerNight = if (price > 0.0) price.toString() else "",
                 latitude = if (campsite.hasMapLocation()) campsite.getLatitude().toString() else "",
                 longitude = if (campsite.hasMapLocation()) campsite.getLongitude().toString() else "",
-                availableDates = campsite.getAvailableDateRanges()
+                availableDates = campsite.getAvailableDateRanges(),
+                rules = campsite.getFinalRules()
             )
         }
 
