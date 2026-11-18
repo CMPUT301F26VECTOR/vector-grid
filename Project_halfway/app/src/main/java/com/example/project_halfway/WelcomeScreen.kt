@@ -6,7 +6,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -19,6 +21,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
 
 /**
@@ -36,7 +39,8 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun WelcomeScreen(
     onEntrantClick: () -> Unit,
-    onOwnerClick: () -> Unit
+    onOwnerClick: () -> Unit,
+    onAdminClick:() -> Unit
 ) {
     LightStatusBarIcons()
 
@@ -70,6 +74,20 @@ fun WelcomeScreen(
         ) {
             Text("Campsite Owner", fontWeight = FontWeight.Bold)
         }
+        Spacer(modifier = Modifier.height(12.dp))
+        Button(onClick = onAdminClick,
+            modifier = Modifier.height(48.dp)
+                .fillMaxWidth()
+                .padding(horizontal = 80.dp),
+            colors = ButtonDefaults.buttonColors(
+                contentColor = AppGreen,
+                containerColor = Color.White
+            )
+            ){
+            Text(text = "Admin",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold)
+        }
     }
 }
 
@@ -77,5 +95,5 @@ fun WelcomeScreen(
 @Preview(showBackground = true)
 @Composable
 private fun WelcomeScreenPreview() {
-    WelcomeScreen(onEntrantClick = {}, onOwnerClick = {})
+    WelcomeScreen(onEntrantClick = {}, onOwnerClick = {}, onAdminClick = {})
 }

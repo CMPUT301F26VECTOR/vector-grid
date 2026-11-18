@@ -15,6 +15,13 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
+// all imports are for image upload
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import com.google.firebase.storage.StorageMetadata
+import java.util.UUID
+// all imports are for image upload
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DateRangePicker
@@ -36,7 +43,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.google.android.gms.maps.model.LatLng
-
+import androidx.compose.ui.platform.LocalContext
 /**
  * Register Campsite screen for the campsite owner (US 02.01.01, US 02.01.02).
  * The owner fills in the campsite's details and presses Save. CampsiteForm
@@ -97,7 +104,47 @@ fun RegisterCampsiteScreen(
 
     // Message shown under the Save button (an error, "Saving..." or "Listing created")
     var message by remember { mutableStateOf("") }
+    var imageUploading by remember { mutableStateOf(false) }
+    var imageMessage by remember { mutableStateOf("") }
+    var imageURL by remember (existing){
+        mutableStateOf(existing?.getImageUrl()?:"")
+    }
+    val storage = FirebaseSecurity.ownerStorage
+    val context = LocalContext.current
+    val imagePicker = rememberLauncherForActivityResult(contract = ActivityResultContracts.PickVisualMedia())
+    {
+        uri ->
+        if (uri != null && !imageUploading){
+            val currentOwner = FirebaseSecurity.ownerAuth.currentUser
 
+            if (currentOwner == null || currentOwner.uid != ownerId){
+                imageMessage = "Sign in as campsite owner"
+            }
+            else{
+                imageUploading =true
+                imageMessage= "uploading Image..."
+                val imageRef = storage.reference.child("campsite_images/$ownerId/${UUID.randomUUID()}")
+                val mdata = StorageMetadata.Builder().setContentType(context.contentResolver.getType(uri)?:"image/jpeg").build()
+
+                imageRef.putFile(uri,mdata)
+                    .addOnSuccessListener {
+                        imageRef.downloadUrl.addOnSuccessListener { downloadUri ->
+
+                            imageURL = downloadUri.toString()
+                            imageUploading = false
+                            imageMessage = "Image uploaded"
+                        }
+                            .addOnFailureListener {
+                                imageUploading = false
+                                imageMessage = "Image Upload failed: ${it.message}"
+                            }
+                    }.addOnFailureListener {
+                        imageUploading = false
+                        imageMessage = "Image upload failed:${it.message}"
+                    }
+            }
+        }
+    }
     LightStatusBarIcons()
 
     Column(
@@ -129,7 +176,22 @@ fun RegisterCampsiteScreen(
             FormField("Services, separated by commas", services, { services = it }, "services_field")
             FormField("Tags, separated by commas", tags, { tags = it }, "tags_field")
             FormField("Price per night ($)", price, { price = it }, "price_field", KeyboardType.Decimal)
-
+            Spacer(modifier = Modifier.height(12.dp))
+            PanelLabel("Campsite Image")
+            Button(
+                onClick = {imagePicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))},
+                enabled  = !imageUploading,
+                colors = greenButtonColors(),
+                modifier = Modifier.testTag("UploadImage")
+            ){
+              Text(if (imageUploading) "uploading.."
+                  else "Upload Image"
+              )
+            }
+            if (imageMessage.isNotBlank()){
+                Text(text = imageMessage,
+                color = AppGreen)
+            }
             // Map location: a pin dropped on a Google Map (optional)
             PanelLabel("Map location (optional)")
             val lat = latitude.toDoubleOrNull()
@@ -210,7 +272,8 @@ fun RegisterCampsiteScreen(
                     message = "Please sign in as a campsite owner first."
                 } else {
                     message = "Saving..."
-                    val campsite = form.toCampsite(ownerId, existing)
+                    //val campsite = form.toCampsite(ownerId, existing)
+                    val campsite = form.toCampsite(ownerId = ownerId,existing=existing,imageUrl = imageURL)
                     CampsiteRepository.save(campsite) { worked ->
                         if (!worked) {
                             message = "Could not save, please try again."

@@ -77,6 +77,9 @@ fun AuthGate() {
             onOwnerClick = {
                 errorMessage = ""
                 screen = "ownerLogin"
+            },
+            onAdminClick={
+                screen = "AdminScreen"
             }
         )
 
@@ -123,6 +126,15 @@ fun AuthGate() {
                 screen = "welcome"
             }
         )
+
+        "AdminScreen" -> AdminLoginScreenUI (
+            onLoginSuccess = {
+                screen = "homeAdminScreen"
+            }
+        )
+
+        "homeAdminScreen"->AdminHomeScreen()
+
     }
 
     if (isLoading) {
