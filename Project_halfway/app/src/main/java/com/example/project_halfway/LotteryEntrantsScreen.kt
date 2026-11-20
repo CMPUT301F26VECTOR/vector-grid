@@ -114,6 +114,7 @@ fun LotteryEntrantsScreen(campsiteId: String) {
             Text("Loading lottery...", modifier = Modifier.padding(16.dp))
         } else {
             LotteryEntrantsList(
+                lottery = current,
                 waitlistNames = current.waitingList.map { names[it] ?: it },
                 winnerNames = current.winners.map { names[it] ?: it },
                 isDrawn = current.isDrawn
@@ -184,12 +185,14 @@ fun lotteryLabel(lottery: Lottery, zone: ZoneId = ZoneId.systemDefault()): Strin
  */
 @Composable
 fun LotteryEntrantsList(
+    lottery: Lottery,
     waitlistNames: List<String>,
     winnerNames: List<String>,
     isDrawn: Boolean
 ) {
     // which tab is open: false = WAITLIST, true = WINNERS
     var showWinners by remember { mutableStateOf(false) }
+    var showSendNotificationScreen by remember { mutableStateOf(false) }
 
     Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
 
@@ -214,19 +217,31 @@ fun LotteryEntrantsList(
                 NameList(winnerNames, "winners_list")
             }
         } else {
-            Text(
-                "People on waitlist: ${waitlistNames.size}",
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(top = 12.dp).testTag("waitlist_count")
-            )
-            if (waitlistNames.isEmpty()) {
+            if(!showSendNotificationScreen) {
+
+                Button(onClick = { showSendNotificationScreen = true }) {
+                    Text("Send Notification to Users on Waitlist")
+                }
+
                 Text(
-                    "No entrants have joined yet.",
-                    modifier = Modifier.testTag("empty_waitlist")
+                    "People on waitlist: ${waitlistNames.size}",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(top = 12.dp).testTag("waitlist_count")
                 )
-            } else {
-                NameList(waitlistNames, "waitlist_list")
+                if (waitlistNames.isEmpty()) {
+                    Text(
+                        "No entrants have joined yet.",
+                        modifier = Modifier.testTag("empty_waitlist")
+                    )
+                } else {
+                    NameList(waitlistNames, "waitlist_list")
+                }
             }
+            else {
+                OwnerNotifyEntrantsScreen({ showSendNotificationScreen = false },
+                    lottery)
+            }
+
         }
     }
 }

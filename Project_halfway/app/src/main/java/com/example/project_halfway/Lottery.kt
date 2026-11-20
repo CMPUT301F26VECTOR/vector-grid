@@ -89,6 +89,16 @@ class Lottery(
     }
 
     /**
+     * Returns Firestore document ID.
+     *
+     * @return Firestore document ID.
+     */
+    fun getLotteryId(): String {
+        return id
+    }
+
+
+    /**
      * Checks if an entrant is already on the waiting list.
      *
      * @param entrantId the entrant's id
