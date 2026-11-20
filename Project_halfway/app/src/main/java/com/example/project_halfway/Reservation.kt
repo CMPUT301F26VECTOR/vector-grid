@@ -35,6 +35,7 @@ package com.example.project_halfway
  * @property status "active", "cancelled" (the entrant cancelled) or "rejected" (the owner rejected it)
  * @property cancelledAt when it was cancelled or rejected, in milliseconds, or 0 if it wasn't
  * @property guests how many people are coming, or 0 if the entrant didn't say
+ * @property rulesAgreed true if entrant agrees to the campsite rules, false if they do not agree
  */
 data class Reservation(
     val id: String = "",
@@ -46,7 +47,8 @@ data class Reservation(
     val createdAt: Long,
     val status: String = STATUS_ACTIVE,
     val cancelledAt: Long = 0L,
-    val guests: Int = 0
+    val guests: Int = 0,
+    val rulesAgreed: Boolean = false
 ) {
 
     /**
@@ -111,7 +113,8 @@ data class Reservation(
             "createdAt" to r.createdAt,
             "status" to r.status,
             "cancelledAt" to r.cancelledAt,
-            "guests" to r.guests
+            "guests" to r.guests,
+            "rulesAgreed" to r.rulesAgreed
         )
 
         /**
@@ -129,7 +132,8 @@ data class Reservation(
             createdAt = (m["createdAt"] as? Number)?.toLong() ?: 0L,
             status = m["status"] as? String ?: STATUS_ACTIVE,
             cancelledAt = (m["cancelledAt"] as? Number)?.toLong() ?: 0L,
-            guests = (m["guests"] as? Number)?.toInt() ?: 0
+            guests = (m["guests"] as? Number)?.toInt() ?: 0,
+            rulesAgreed =  m["agreedToRules"] as? Boolean?: false
         )
     }
 }

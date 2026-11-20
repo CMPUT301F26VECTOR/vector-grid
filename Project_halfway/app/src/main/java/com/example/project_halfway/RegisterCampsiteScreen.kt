@@ -103,6 +103,7 @@ fun RegisterCampsiteScreen(
     var services by remember { mutableStateOf(start.services) }
     var tags by remember { mutableStateOf(start.tags) }
     var price by remember { mutableStateOf(start.pricePerNight) }
+    var rules by remember { mutableStateOf(start.rules) }
     // The map pin, kept as text because CampsiteForm checks and converts it
     var latitude by remember { mutableStateOf(start.latitude) }
     var longitude by remember { mutableStateOf(start.longitude) }
@@ -164,6 +165,7 @@ fun RegisterCampsiteScreen(
             FormField("Campsite Name", name, { name = it }, "name_field")
             FormField("Location (e.g. Edmonton, AB)", location, { location = it }, "location_field")
             FormField("Description", description, { description = it }, "description_field", singleLine = false)
+            FormField("Rules & Policies (optional)", rules, { rules = it }, "rules_field", singleLine = false)
             FormField("Occupancy", occupancy, { occupancy = it }, "occupancy_field", KeyboardType.Number)
             FormField("Campground Name", campgroundName, { campgroundName = it }, "campground_field")
             FormField("Site Type (e.g. Tent site)", type, { type = it }, "type_field")
@@ -279,7 +281,8 @@ fun RegisterCampsiteScreen(
                     latitude = latitude,
                     longitude = longitude,
                     availableDates = availableDates,
-                    imageUrl = imageUrl
+                    imageUrl = imageUrl,
+                    rules = rules
                 )
                 val error = form.firstError()
 

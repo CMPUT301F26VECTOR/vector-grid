@@ -177,7 +177,8 @@ fun OwnerReservationsList(
     rows: List<OwnerReservationRow>,
     loading: Boolean = false,
     onBackClick: () -> Unit = {},
-    today: String = LocalDate.now().toString()
+    today: String = LocalDate.now().toString(),
+    onReject: (String, String,String) -> Unit = {_,_,_ ->}// reservationId, entrantId, campsiteId
 ) {
     // Which tab is open; Active is first, like the mockup
     var tab by remember { mutableStateOf(ReservationTab.ACTIVE) }
@@ -239,7 +240,11 @@ fun OwnerReservationsList(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(shown) { row ->
-                    ReservationCard(row)
+                    ReservationCard(
+                        row = row,
+                        today = today,
+                        onRejectClick = { rId, eId, cId -> onReject(rId, eId, cId) }
+                    )
                 }
             }
         }
@@ -249,11 +254,18 @@ fun OwnerReservationsList(
 /**
  * One white card on the Reservations screen: the entrant, the campsite, the
  * dates and guests, and for a cancelled one who cancelled it and when.
+ * Also provides an option to reject active reservations.
  *
  * @param row the reservation to show
+ * @param today today's date as YYYY-MM-DD
+ * @param onRejectClick called when the owner taps reject on an active reservation
  */
 @Composable
-private fun ReservationCard(row: OwnerReservationRow) {
+private fun ReservationCard(
+    row: OwnerReservationRow,
+    today: String = LocalDate.now().toString(),
+    onRejectClick: (String, String, String) -> Unit = { _, _, _ -> }
+) {
     val r = row.reservation
     ElevatedCard(
         shape = RoundedCornerShape(16.dp),
@@ -276,6 +288,15 @@ private fun ReservationCard(row: OwnerReservationRow) {
                 if (r.cancelledAt > 0L) {
                     val format = SimpleDateFormat("MMM d, yyyy", Locale.ENGLISH)
                     Text("On ${format.format(Date(r.cancelledAt))}", color = Color(0xFF5F6368))
+                }
+            } else if (r.isActive(today)) {
+                Spacer(Modifier.height(8.dp))
+                Button(
+                    onClick = { onRejectClick(r.id, r.entrantId, r.campsiteId) },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFB3261E)),
+                    modifier = Modifier.testTag("reject_button_${r.id}")
+                ) {
+                    Text("Reject", color = Color.White)
                 }
             }
         }

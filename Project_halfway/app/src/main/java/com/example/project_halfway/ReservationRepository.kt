@@ -121,4 +121,43 @@ object ReservationRepository {
                 }
         }
     }
+
+    /**
+     * Rejects an active reservation by the campsite owner (US 02.08.01).
+     * Updates the reservation status to "rejected", sets cancelledAt,
+     * and sends a notification to the entrant.
+     *
+     * @param reservationId the reservation document id
+     * @param entrantId the entrant who made the reservation
+     * @param campsiteId the campsite id
+     * @param onDone called with true if successful, false otherwise
+     */
+    fun rejectReservation(
+        reservationId: String,
+        entrantId: String,
+        campsiteId: String,
+        onDone: (Boolean) -> Unit
+    ) {
+        val updates = mapOf(
+            "status" to Reservation.STATUS_REJECTED,
+            "cancelledAt" to System.currentTimeMillis()
+        )
+        reservations().document(reservationId).update(updates)
+            .addOnSuccessListener {
+                // Notify the entrant in the "notifications" collection
+                val notification = mapOf(
+                    "entrantId" to entrantId,
+                    "campsiteId" to campsiteId,
+                    "type" to "rejected",
+                    "sentAt" to System.currentTimeMillis()
+                )
+                notifications().add(notification)
+                    .addOnSuccessListener { onDone(true) }
+                    .addOnFailureListener { onDone(true) } // Succeeds even if notification write fails
+            }
+            .addOnFailureListener {
+                println("Rejecting reservation failed: ${it.message}")
+                onDone(false)
+            }
+    }
 }
