@@ -20,6 +20,7 @@ package com.example.project_halfway
  * @property type "won" or "notSelected"
  * @property message the text the entrant reads
  * @property sentAt when it was made, in milliseconds
+ * @property offerStatus whether the winner's reservation offer is pending, accepted, or declined (US 01.04.03)
  */
 data class LotteryResultNotification(
     val id: String = "",
@@ -28,7 +29,8 @@ data class LotteryResultNotification(
     val campsiteId: String,
     val type: String,
     val message: String,
-    val sentAt: Long
+    val sentAt: Long,
+    val offerStatus: String = "pending"
 ) {
     /** True if this tells the entrant they won the lottery. */
     fun isWin(): Boolean = type == TYPE_WON
@@ -40,6 +42,15 @@ data class LotteryResultNotification(
 
         /** Type of a notification for an entrant who wasn't picked. */
         const val TYPE_NOT_SELECTED = "notSelected"
+
+        /** The winner has not responded to their reservation offer yet. */
+        const val OFFER_PENDING = "pending"
+
+        /** The winner has accepted their reservation offer. */
+        const val OFFER_ACCEPTED = "accepted"
+
+        /** The winner has declined their reservation offer (US 01.04.03). */
+        const val OFFER_DECLINED = "declined"
 
         /** Text for winners. */
         const val WON_MESSAGE = "You won the lottery! Reserve your dates below."
@@ -82,7 +93,8 @@ data class LotteryResultNotification(
             "campsiteId" to n.campsiteId,
             "type" to n.type,
             "message" to n.message,
-            "sentAt" to n.sentAt
+            "sentAt" to n.sentAt,
+            "offerStatus" to n.offerStatus
         )
 
         /**
@@ -97,7 +109,8 @@ data class LotteryResultNotification(
                 campsiteId = m["campsiteId"] as? String ?: "",
                 type = m["type"] as? String ?: "",
                 message = m["message"] as? String ?: "",
-                sentAt = (m["sentAt"] as? Number)?.toLong() ?: 0L
+                sentAt = (m["sentAt"] as? Number)?.toLong() ?: 0L,
+                offerStatus = m["offerStatus"] as? String ?: OFFER_PENDING
             )
     }
 }
