@@ -12,11 +12,13 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddLocationAlt
 import androidx.compose.material.icons.filled.Cabin
+import androidx.compose.material.icons.filled.EventAvailable
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -27,7 +29,8 @@ import androidx.compose.ui.unit.sp
  * screens, in the app's green look (the same as Browse Campsites and the
  * entrant home). OwnerScreens decides what each card opens.
  *
- * Used for US 02.01.01 (Register a Campsite) and US 02.03.01 (My Campsites).
+ * Used for US 02.01.01 (Register a Campsite), US 02.03.01 (My Campsites) and
+ * US 02.07.01, 02.07.02, 02.07.03 (Reservations).
  *
  * Outstanding issues: the mockup's owner home also lists the owner's lotteries;
  * that part is not built yet. A replacement should keep these callbacks so the
@@ -36,12 +39,19 @@ import androidx.compose.ui.unit.sp
  * @param onSignOut called when Sign Out is pressed
  * @param onRegisterClick called when Register a Campsite is pressed
  * @param onMyCampsitesClick called when My Campsites is pressed
+ * @param onReservationsClick called when Reservations is pressed
+ *
+ * **AI assistance (Samarth Sathya Karthik):** the Reservations card was
+ * implemented using Claude AI; Samarth tested it and checked that it works.
+ *
+ * Anthropic. (2026). *Claude* (Claude Opus 5.5) [Large language model]. https://claude.ai
  */
 @Composable
 fun OwnerHomeScreenUI(
     onSignOut: () -> Unit,
     onRegisterClick: () -> Unit = {},
-    onMyCampsitesClick: () -> Unit = {}
+    onMyCampsitesClick: () -> Unit = {},
+    onReservationsClick: () -> Unit = {}
 ) {
     LightStatusBarIcons()
 
@@ -75,6 +85,14 @@ fun OwnerHomeScreenUI(
             title = "My Campsites",
             subtitle = "See your campsites, their lotteries and waitlists",
             onClick = onMyCampsitesClick
+        )
+        Spacer(Modifier.height(12.dp))
+        HomeCard(
+            icon = Icons.Filled.EventAvailable,
+            title = "Reservations",
+            subtitle = "Active, past and cancelled reservations",
+            onClick = onReservationsClick,
+            modifier = Modifier.testTag("reservations_card")
         )
 
         Spacer(Modifier.weight(1f))

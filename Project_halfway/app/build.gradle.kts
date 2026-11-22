@@ -70,6 +70,8 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation("com.google.firebase:firebase-firestore")
+    // Campsite images are uploaded to Firebase Storage (US 02.01.02)
+    implementation("com.google.firebase:firebase-storage")
     // Google Maps in Compose: map previews and the location picker
     implementation(libs.maps.compose)
     testImplementation(libs.junit)

@@ -39,7 +39,11 @@ class CampsiteModel (
     private val tags: List<String> = emptyList(),
 
     // Every rating entrants have given, from 1 to 5 stars (US 01.01.04, 01.13.01).
-    private val ratings: List<Double> = emptyList()
+    private val ratings: List<Double> = emptyList(),
+
+    // Stores campsite rules
+    private val rules: String = ""
+
 ) {
     /**
      * Returns the single rating number stored on the campsite. Older campsites
@@ -145,6 +149,16 @@ class CampsiteModel (
     public fun getAvailableDateRanges() : List<Map<String, String>> {
         return availableDateRanges
     }
+
+    /**
+     * Returns the campsite's custom rules if set by the owner,
+     * otherwise returns the app's default campsite rules.
+     */
+    fun getRules(): String {
+        return if (rules.isNotBlank()) rules else DEFAULT_CAMPSITE_RULES
+    }
+
+    fun getFinalRules(): String = rules
 
     /**
      * Tells whether the owner has put this campsite on the map. A campsite saved
