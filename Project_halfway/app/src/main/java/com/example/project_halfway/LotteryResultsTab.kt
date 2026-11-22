@@ -211,9 +211,10 @@ fun LotteryResultCard(
     message: String,
     isWin: Boolean,
     reservedText: String?,
-    offerStatus: String,
-    onReserve: () -> Unit,
-    onDecline: () -> Unit
+    offerStatus: String = LotteryResultNotification.OFFER_PENDING,
+    onReserve: () -> Unit = {},
+    onDecline: () -> Unit = {}
+
 ) {
     Card(
         modifier = Modifier

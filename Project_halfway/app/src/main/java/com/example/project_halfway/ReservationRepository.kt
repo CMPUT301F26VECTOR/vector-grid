@@ -123,6 +123,50 @@ object ReservationRepository {
             }
     }
 
+    /**
+     * Loads the winning offer statuses for one lottery (US 01.04.03).
+     *
+     * The campsite owner uses these statuses to see which winners declined their offers. The lottery's winners are not changed.
+     *
+     * @param lotteryId the selected lottery's Firestore id
+     * @param onResult maps entrant ids to their offer statuses
+     */
+    fun getOfferStatusesForLottery(
+        lotteryId: String,
+        onResult: (Map<String, String>) -> Unit
+    ) {
+        if (lotteryId.isBlank()) {
+            onResult(emptyMap())
+            return
+        }
+
+        FirebaseSecurity.ownerDb.collection("notifications")
+            .whereEqualTo("lotteryId", lotteryId)
+            .get()
+            .addOnSuccessListener { result ->
+                val statuses = mutableMapOf<String, String>()
+
+                for (document in result.documents) {
+                    val entrantId = document.getString("entrantId")
+                    val type = document.getString("type")
+
+                    if (!entrantId.isNullOrBlank() &&
+                        type == LotteryResultNotification.TYPE_WON
+                    ) {
+                        statuses[entrantId] =
+                            document.getString("offerStatus")
+                                ?: LotteryResultNotification.OFFER_PENDING
+                    }
+                }
+
+                onResult(statuses)
+            }
+            .addOnFailureListener {
+                println("Loading lottery offer statuses failed: ${it.message}")
+                onResult(emptyMap())
+            }
+    }
+
     // ---------- Owner side (US 02.06.01, 02.07.01, 02.07.02, 02.07.03) ----------
     // Added at the end of the file on purpose, so it doesn't clash with
     // teammates' changes higher up.
