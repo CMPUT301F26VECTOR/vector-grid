@@ -1,5 +1,6 @@
 package com.example.project_halfway
 
+import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -28,6 +29,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.modifier.modifierLocalOf
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.tooling.preview.Preview
@@ -41,6 +43,7 @@ fun ImagesListUI (toback: ()->Unit) {
     var Images by remember { mutableStateOf<List<ImageAdmin>>(emptyList()) }
     var loading by remember {mutableStateOf(true)}
     var message by remember { mutableStateOf("") }
+    val context = LocalContext.current
 
     LaunchedEffect(Unit) {
         AdminRepository.gettingAllImages(
@@ -81,7 +84,28 @@ fun ImagesListUI (toback: ()->Unit) {
                         modifier = Modifier.size(140.dp)
                     )
                     IconButton(
-                        onClick = {}
+                        onClick = {
+                            AdminRepository.ImageDelete(
+                                image = image,
+                                onSuccess = {
+                                    Images = Images.filter{
+                                        it !=image
+                                    }
+                                  Toast.makeText(
+                                      context,
+                                      "Image deleted Successfully",
+                                      Toast.LENGTH_LONG
+                                  ).show()
+                                },
+                                onError = {error->
+                                   Toast.makeText(
+                                       context,
+                                       error,
+                                       Toast.LENGTH_LONG
+                                   ).show()
+                                }
+                            )
+                        }
                     ) {
                         Icon(
                             imageVector = Icons.Outlined.Delete,

@@ -114,4 +114,23 @@ object AdminRepository {
         }.addOnFailureListener { onError("Failed to get the profile image ") }
 
     }
+
+    fun ImageDelete(image: ImageAdmin, onSuccess: ()->Unit, onError:(String)->Unit){
+
+        val storage = FirebaseSecurity.adminStorage
+        val db = FirebaseSecurity.adminDB
+
+        storage.getReferenceFromUrl(image.imageURL).delete().addOnSuccessListener {
+            db.collection(image.collection).document(image.documentId)
+                .update(image.field,"").addOnSuccessListener {
+                    onSuccess()
+                 }.addOnFailureListener { error->
+                     onError("the update has failed:$error.message")
+                }
+        }.addOnFailureListener { error->
+            onError("Image not deleted: ${error.message}")
+        }
+
+    }
+
 }
