@@ -16,6 +16,8 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import androidx.compose.ui.test.onAllNodesWithTag
+
 
 /**
  * UI tests for the screens changed to finish the partly working half-way
@@ -134,4 +136,102 @@ class HalfwayFixesUITest {
         composeRule.onNodeWithText("Oct 1 to Oct 10, 2026").performClick()
         assertEquals(1, picked)
     }
+
+
+    /**
+     * US 01.04.03 - Acceptance Criterion 1
+     * A winning entrant can choose to decline an offer.
+     */
+    @Test
+    fun winner_canClickDeclineOffer() {
+        var declineClicked = false
+
+        composeRule.setContent {
+            LotteryResultCard(
+                campsiteName = "Site 7",
+                message = LotteryResultNotification.WON_MESSAGE,
+                isWin = true,
+                reservedText = null,
+                offerStatus = LotteryResultNotification.OFFER_PENDING,
+                onReserve = {},
+                onDecline = { declineClicked = true }
+            )
+        }
+
+        composeRule.onNodeWithTag("decline_button")
+            .assertIsDisplayed()
+            .performClick()
+
+        assertTrue(declineClicked)
+    }
+
+    /**
+     * US 01.04.03 - Acceptance Criterion 2
+     * The entrant must confirm before declining.
+     *
+     * This tests the confirmation dialog's callbacks
+     * without using Firebase.
+     */
+    @Test
+    fun declineOffer_requiresConfirmation() {
+        var confirmed = false
+        var keptOffer = false
+
+        composeRule.setContent {
+            DeclineOfferConfirmationDialog(
+                decliningInProgress = false,
+                onDismiss = { keptOffer = true },
+                onConfirm = { confirmed = true }
+            )
+        }
+
+        composeRule.onNodeWithText("Decline reservation offer?")
+            .assertIsDisplayed()
+
+        // Merely opening the dialog must not confirm.
+        assertTrue(!confirmed)
+
+        composeRule.onNodeWithTag("keep_offer")
+            .performClick()
+
+        assertTrue(keptOffer)
+        assertTrue(!confirmed)
+    }
+
+    /**
+     * US 01.04.03 - Acceptance Criteria 2 and 3
+     * After a successful decline, the offer is closed.
+     *
+     * Uses sample status data instead of Firebase.
+     */
+    @Test
+    fun declinedOffer_hidesActionButtons() {
+        composeRule.setContent {
+            LotteryResultCard(
+                campsiteName = "Site 7",
+                message = LotteryResultNotification.WON_MESSAGE,
+                isWin = true,
+                reservedText = null,
+                offerStatus = LotteryResultNotification.OFFER_DECLINED,
+                onReserve = {},
+                onDecline = {}
+            )
+        }
+
+        //composeRule.onRoot().printToLog("DECLINED_OFFER_TEST")
+        composeRule.onNodeWithTag("offer_declined").assertIsDisplayed()
+
+        assertTrue(
+            composeRule.onAllNodesWithTag("reserve_button")
+                .fetchSemanticsNodes()
+                .isEmpty()
+        )
+
+        assertTrue(
+            composeRule.onAllNodesWithTag("decline_button")
+                .fetchSemanticsNodes()
+                .isEmpty()
+        )
+    }
+
 }
