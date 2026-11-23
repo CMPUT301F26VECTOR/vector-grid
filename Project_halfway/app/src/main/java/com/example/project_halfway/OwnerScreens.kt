@@ -246,7 +246,7 @@ fun OwnerScreens(ownerId: String, onSignOut: () -> Unit) {
         "lotteryCampsites" -> {
             if (chosen != null) {
                 WithBackArrow(onBack = { screen = ownerBackTarget(screen) }) {
-                    LotteryCampsitesScreen(campsiteId = chosen.getId())
+                    LotteryCampsitesScreen(campsiteId = chosen.getId(), ownerId = ownerId)
                 }
             }
         }

@@ -18,7 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 
-// The owner's screen for the campsites in one lottery (US 02.04.02).
+// The owner's screen for the campsites in one lottery (US 02.04.02, US 02.04.08).
 // It lists every campsite in the campsite's newest lottery, and the owner can
 // remove one until registration opens.
 //
@@ -26,9 +26,12 @@ import androidx.compose.ui.unit.dp
 // looks (split up so it can be tested without Firebase, the same way
 // LotteryEntrantsScreen and LotteryEntrantsList are).
 //
+// Campsites that belong to another owner are labelled and can't be removed by
+// this owner (US 02.04.08).
+//
 // Outstanding issues: shows the campsite's newest lottery only. If saving a
-// removal fails, the owner has to leave the screen and open it again.
-
+// removal fails, the owner has to leave the screen and open it again. The
+// "only your own campsite" rule is only enforced in the app, not in Firestore.
 /**
  * Loads the newest lottery for a campsite and the names of its campsites, and
  * lets the owner remove one before registration opens (US 02.04.02).
@@ -36,15 +39,22 @@ import androidx.compose.ui.unit.dp
  * The rule (not after registration opens, never the last campsite) is in
  * Lottery.removeCampsite. The change is saved with LotteryRepository.updateCampsites.
  *
+ * Campsites that belong to another owner are shown with "(other owner)" and
+ * can't be removed from here (US 02.04.08).
+ *
  * @param campsiteId id of the owner's campsite whose lottery is shown
+ * @param ownerId id of the signed-in owner; campsites of other owners can't be removed by them (US 02.04.08)
  */
+
 @Composable
-fun LotteryCampsitesScreen(campsiteId: String) {
+fun LotteryCampsitesScreen(campsiteId: String, ownerId: String) {
     var loading by remember { mutableStateOf(true) }
     var lottery by remember { mutableStateOf<Lottery?>(null) }
     // each campsite in the lottery as (id, name)
     var campsites by remember { mutableStateOf(listOf<Pair<String, String>>()) }
     var message by remember { mutableStateOf("") }
+    // ids of campsites in the lottery that belong to another owner (US 02.04.08)
+    var otherOwnerIds by remember { mutableStateOf(setOf<String>()) }
 
     LaunchedEffect(campsiteId) {
         LotteryRepository.getLotteriesForCampsite(campsiteId) { lotteries ->
@@ -54,8 +64,9 @@ fun LotteryCampsitesScreen(campsiteId: String) {
                 loading = false
             } else {
                 lottery = newest
-                loadCampsiteNames(newest.campsiteIds) { found ->
+                loadCampsiteNames(newest.campsiteIds, ownerId) { found, others ->
                     campsites = found
+                    otherOwnerIds = others
                     loading = false
                 }
             }
@@ -77,6 +88,7 @@ fun LotteryCampsitesScreen(campsiteId: String) {
         campsites = campsites,
         registrationStarted = System.currentTimeMillis() >= current.startDate,
         message = message,
+        otherOwnerIds = otherOwnerIds,
         onRemove = { id ->
             if (current.removeCampsite(id, System.currentTimeMillis())) {
                 message = "Saving..."
@@ -109,7 +121,8 @@ fun LotteryCampsitesList(
     campsites: List<Pair<String, String>>,
     registrationStarted: Boolean,
     message: String,
-    onRemove: (String) -> Unit
+    onRemove: (String) -> Unit,
+    otherOwnerIds: Set<String> = emptySet()
 ) {
     Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
         Text(
@@ -135,10 +148,11 @@ fun LotteryCampsitesList(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
             ) {
-                Text(name, modifier = Modifier.weight(1f).testTag("lottery_campsite_$id"))
+                val label = if (id in otherOwnerIds) "$name (other owner)" else name
+                Text(label, modifier = Modifier.weight(1f).testTag("lottery_campsite_$id"))
                 OutlinedButton(
                     onClick = { onRemove(id) },
-                    enabled = !registrationStarted && campsites.size > 1,
+                    enabled = !registrationStarted && campsites.size > 1 && id !in otherOwnerIds,
                     modifier = Modifier.testTag("remove_campsite_$id")
                 ) {
                     Text("Remove")
@@ -151,21 +165,30 @@ fun LotteryCampsitesList(
 }
 
 // Looks up each campsite's name; gives (id, name) in the lottery's order once
-// every lookup is back. A campsite that can't be found is shown by its id.
-private fun loadCampsiteNames(ids: List<String>, onResult: (List<Pair<String, String>>) -> Unit) {
+// every lookup is back, plus the ids of campsites that belong to another owner.
+// A campsite that can't be found is shown by its id.
+private fun loadCampsiteNames(
+    ids: List<String>,
+    ownerId: String,
+    onResult: (List<Pair<String, String>>, Set<String>) -> Unit
+) {
     if (ids.isEmpty()) {
-        onResult(emptyList())
+        onResult(emptyList(), emptySet())
         return
     }
     val names = mutableMapOf<String, String>()
+    val others = mutableSetOf<String>()
     var answered = 0
 
     for (id in ids) {
         CampsiteRepository.getById(id) { campsite ->
-            names[id] = campsite?.getCampsiteName() ?: id
+            names[id] = campsite.getCampsiteName()
+            if (campsite.getOwnerId() != ownerId) {
+                others.add(id)
+            }
             answered++
             if (answered == ids.size) {
-                onResult(ids.map { it to (names[it] ?: it) })
+                onResult(ids.map { it to (names[it] ?: it) }, others)
             }
         }
     }
