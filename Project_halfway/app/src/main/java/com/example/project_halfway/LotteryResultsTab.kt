@@ -38,7 +38,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.AlertDialog
@@ -137,60 +136,96 @@ fun LotteryResultsTab() {
     if (offer != null) {
         var decliningInProgress by remember { mutableStateOf(false) }
 
-        AlertDialog(
-            onDismissRequest = {
-                if (!decliningInProgress) declining = null
+
+        DeclineOfferConfirmationDialog(
+            decliningInProgress = decliningInProgress,
+            onDismiss = {
+                declining = null
             },
-            title = {
-                Text("Decline reservation offer?")
-            },
-            text = {
-                Text("Are you sure you want to decline? You won't be able to reserve dates for this offer afterward.")
-            },
-            confirmButton = {
-                TextButton(
-                    enabled = !decliningInProgress,
-                    onClick = {
-                        decliningInProgress = true
+            onConfirm = {
+                decliningInProgress = true
 
-                        ReservationRepository.declineOffer(
-                            notificationId = offer.id,
-                            entrantId = entrantId
-                        ) { success ->
-                            decliningInProgress = false
+                ReservationRepository.declineOffer(
+                    notificationId = offer.id,
+                    entrantId = entrantId
+                ) { success ->
+                    decliningInProgress = false
 
-                            if (success) {
-                                val index = results.indexOfFirst { it.id == offer.id }
-
-                                if (index != -1) {
-                                    results[index] = results[index].copy(
-                                        offerStatus = LotteryResultNotification.OFFER_DECLINED
-                                    )
-                                }
-
-                                declining = null
-                                message = "Reservation offer declined"
-                            } else {
-                                message = "Could not decline the offer. Please try again."
-                                declining = null
-                            }
+                    if (success) {
+                        val index = results.indexOfFirst {
+                            it.id == offer.id
                         }
+
+                        if (index != -1) {
+                            results[index] = results[index].copy(
+                                offerStatus =
+                                    LotteryResultNotification.OFFER_DECLINED
+                            )
+                        }
+
+                        declining = null
+                        message = "Reservation offer declined"
+                    } else {
+                        declining = null
+                        message = "Could not decline the offer. Please try again."
                     }
-                ) {
-                    Text("Decline", color = Color.Red)
-                }
-            },
-            dismissButton = {
-                TextButton(
-                    enabled = !decliningInProgress,
-                    onClick = { declining = null }
-                ) {
-                    Text("Keep offer")
                 }
             }
         )
+
     }
 }
+
+
+/**
+ * Confirmation dialog for declining a winning lottery offer.
+ * US 01.04.03 - Acceptance Criterion 2.
+ *
+ * @param decliningInProgress true while saving the decline
+ * @param onDismiss called when the entrant keeps the offer
+ * @param onConfirm called when the entrant confirms declining
+ */
+@Composable
+fun DeclineOfferConfirmationDialog(
+    decliningInProgress: Boolean,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = {
+            if (!decliningInProgress) onDismiss()
+        },
+        title = {
+            Text("Decline reservation offer?")
+        },
+        text = {
+            Text(
+                "Are you sure you want to decline? " +
+                        "You won't be able to reserve dates " +
+                        "for this offer afterward."
+            )
+        },
+        confirmButton = {
+            TextButton(
+                enabled = !decliningInProgress,
+                onClick = onConfirm,
+                modifier = Modifier.testTag("confirm_decline")
+            ) {
+                Text("Decline", color = Color.Red)
+            }
+        },
+        dismissButton = {
+            TextButton(
+                enabled = !decliningInProgress,
+                onClick = onDismiss,
+                modifier = Modifier.testTag("keep_offer")
+            ) {
+                Text("Keep offer")
+            }
+        }
+    )
+}
+
 
 /**
  * One draw result: the campsite, whether the entrant won, and for a winner
@@ -212,8 +247,8 @@ fun LotteryResultCard(
     isWin: Boolean,
     reservedText: String?,
     offerStatus: String = LotteryResultNotification.OFFER_PENDING,
-    onReserve: () -> Unit = {},
-    onDecline: () -> Unit = {}
+    onDecline: () -> Unit = {},
+    onReserve: () -> Unit = {}
 
 ) {
     Card(
