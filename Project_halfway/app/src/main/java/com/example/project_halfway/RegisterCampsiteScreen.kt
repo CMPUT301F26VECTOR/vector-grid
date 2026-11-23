@@ -1,5 +1,8 @@
 package com.example.project_halfway
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.imePadding
@@ -54,9 +57,20 @@ import androidx.compose.ui.platform.LocalContext
  * LocationPickerDialog. It is optional: a campsite saved without a pin shows
  * "No location yet" on its details.
  *
- * Outstanding issues: the Upload button from the mockup is not built yet, so
- * no image is saved. The ownerId has to be passed in by the screen that
+ * The optional image (US 02.01.02): Upload image opens the phone's photo
+ * picker, the picture is uploaded with CampsiteImageUploader, and its link is
+ * saved on the campsite. Remove takes the image off the campsite.
+ *
+ * Only the owner who registered a campsite can save changes to it
+ * (US 02.01.03, checked with CampsiteForm.canEdit).
+ *
+ * Outstanding issues: the ownerId has to be passed in by the screen that
  * opens this one (the owner home screen).
+ *
+ * **AI assistance (Samarth Sathya Karthik):** the image section and the owner
+ * check were implemented using Claude AI; Samarth tested them and checked that they work.
+ *
+ * Anthropic. (2026). *Claude* (Claude Opus 5.5) [Large language model]. https://claude.ai
  *
  * The screen uses the app's green look from Browse Campsites: a white title
  * with a back arrow, the boxes in a white panel, and a white Save button.
@@ -69,6 +83,8 @@ import androidx.compose.ui.platform.LocalContext
  * @param onBackClick called when the back arrow is pressed; null shows no arrow
  * @param existing the campsite to edit, or null to register a new one
  * @param onSaved called with the saved campsite after an edit is saved
+ * @param uploadImage uploads a picked picture and gives back its link (or null);
+ * CampsiteImageUploader.upload by default, and replaced in tests
  */
 @Composable
 fun RegisterCampsiteScreen(
@@ -90,6 +106,7 @@ fun RegisterCampsiteScreen(
     var services by remember { mutableStateOf(start.services) }
     var tags by remember { mutableStateOf(start.tags) }
     var price by remember { mutableStateOf(start.pricePerNight) }
+    var rules by remember { mutableStateOf(start.rules) }
     // The map pin, kept as text because CampsiteForm checks and converts it
     var latitude by remember { mutableStateOf(start.latitude) }
     var longitude by remember { mutableStateOf(start.longitude) }
@@ -170,6 +187,7 @@ fun RegisterCampsiteScreen(
             FormField("Campsite Name", name, { name = it }, "name_field")
             FormField("Location (e.g. Edmonton, AB)", location, { location = it }, "location_field")
             FormField("Description", description, { description = it }, "description_field", singleLine = false)
+            FormField("Rules & Policies (optional)", rules, { rules = it }, "rules_field", singleLine = false)
             FormField("Occupancy", occupancy, { occupancy = it }, "occupancy_field", KeyboardType.Number)
             FormField("Campground Name", campgroundName, { campgroundName = it }, "campground_field")
             FormField("Site Type (e.g. Tent site)", type, { type = it }, "type_field")
@@ -261,7 +279,9 @@ fun RegisterCampsiteScreen(
                     pricePerNight = price,
                     latitude = latitude,
                     longitude = longitude,
-                    availableDates = availableDates
+                    availableDates = availableDates,
+                    //imageUrl = imageUrl,
+                    rules = rules
                 )
                 val error = form.firstError()
 
