@@ -123,7 +123,7 @@ data class CampsiteForm(
      * one. Its id, photo and ratings are kept, since the form doesn't change them.
      * @return the campsite to save; a new one has no id yet (Firestore gives it one)
      */
-    fun toCampsite(ownerId: String, existing: CampsiteModel? = null): CampsiteModel {
+    fun toCampsite(ownerId: String, existing: CampsiteModel? = null,imageUrl:String=existing?.getImageUrl() ?:""): CampsiteModel {
         check(firstError() == null) { "The form still has a problem: ${firstError()}" }
 
         return CampsiteModel(
@@ -136,8 +136,8 @@ data class CampsiteForm(
             occupancy = occupancy.trim().toInt(),
             userRating = existing?.getUserRating() ?: 0.0, // no ratings yet for a new campsite
             description = description.trim(),
-            // The new image if the owner uploaded or removed one, otherwise the old one
-            imageUrl = imageUrl ?: existing?.getImageUrl() ?: "",
+            //imageUrl = existing?.getImageUrl() ?: "",
+            imageUrl = imageUrl,
             id = existing?.getId() ?: "",
             ownerId = ownerId,
             type = type.trim(),
