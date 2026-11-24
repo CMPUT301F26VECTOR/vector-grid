@@ -8,6 +8,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.outlined.EventNote
 import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.foundation.layout.statusBarsPadding
 import android.widget.Toast
@@ -117,6 +118,10 @@ fun EntrantHomeScreenUI(
     var viewPolicyGuidelines by remember {mutableStateOf(false)}
 
     val uid = FirebaseSecurity.auth.currentUser?.uid
+
+    // Parneet: shows phone pop-ups for new notifications while the app is open (US 01.03.01, 01.03.02)
+    NotificationWatcher()
+
     if (openDialog){
         AlertDialog(
             onDismissRequest = {openDialog = false},
@@ -378,6 +383,15 @@ fun EntrantHomeScreenUI(
             title = "My Reservations & Entries",
             subtitle = "See the waitlists you joined",
             onClick = { context.startActivity(Intent(context, MyEntriesActivity::class.java)) }
+        )
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // Parneet: card for the Notifications screen (US 01.03.01, 01.03.02, 01.05.02, 01.07.02, 01.10.01)
+        HomeCard(
+            icon = Icons.Outlined.Notifications,
+            title = "Notifications",
+            subtitle = "Lottery results, reservations and cancellations",
+            onClick = { context.startActivity(Intent(context, NotificationsActivity::class.java)) }
         )
         Spacer(modifier = Modifier.height(12.dp))
 
