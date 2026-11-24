@@ -167,6 +167,86 @@ object ReservationRepository {
             }
     }
 
+
+    /**
+     * Loads reservations for a campsite so entrants can
+     * see which dates are already booked (US 01.04.01).
+     */
+    fun getForCampsite(
+        campsiteId: String,
+        onResult: (List<Reservation>?) -> Unit
+    ) {
+        if (campsiteId.isBlank()) {
+            onResult(null)
+            return
+        }
+
+        reservations()
+            .whereEqualTo("campsiteId", campsiteId)
+            .get()
+            .addOnSuccessListener { result ->
+                val activeReservations = result.documents
+                    .mapNotNull { document ->
+                        document.data?.let {
+                            Reservation.fromMap(document.id, it)
+                        }
+                    }
+                    .filter { !it.isCancelled() }
+
+                onResult(activeReservations)
+            }
+            .addOnFailureListener { error ->
+                println("Loading booked dates failed: ${error.message}")
+                onResult(null)
+            }
+    }
+
+
+    /**
+     * Listens for reservation changes for one campsite.
+     * US 01.04.01 - Available dates update when others book.
+     *
+     * Returns null if Firestore cannot load availability.
+     *  AI assistance (Deepali Ladhar):
+     *  This function was implemented with the help of OpenAI ChatGPT.
+     *  ChatGPT assisted with the Firestore snapshot listener syntax
+     *  and real-time reservation availability updates (US 01.04.01).
+     *  Deepali reviewed and verified the implementation.
+     *
+     *  OpenAI. (2026). ChatGPT [Large language model].
+     *  https://chatgpt.com/
+     */
+    fun listenForCampsiteReservations(
+        campsiteId: String,
+        onResult: (List<Reservation>?) -> Unit
+    ): com.google.firebase.firestore.ListenerRegistration? {
+        if (campsiteId.isBlank()) {
+            onResult(null)
+            return null
+        }
+
+        return reservations()
+            .whereEqualTo("campsiteId", campsiteId)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null || snapshot == null) {
+                    println("Listening for booked dates failed: ${error?.message}")
+                    onResult(null)
+                } else {
+                    val activeReservations = snapshot.documents
+                        .mapNotNull { document ->
+                            document.data?.let {
+                                Reservation.fromMap(document.id, it)
+                            }
+                        }
+                        .filter { !it.isCancelled() }
+
+                    onResult(activeReservations)
+                }
+            }
+    }
+
+
+
     // ---------- Owner side (US 02.06.01, 02.07.01, 02.07.02, 02.07.03) ----------
     // Added at the end of the file on purpose, so it doesn't clash with
     // teammates' changes higher up.
