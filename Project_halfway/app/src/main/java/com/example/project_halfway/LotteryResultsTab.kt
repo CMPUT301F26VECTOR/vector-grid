@@ -41,6 +41,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.AlertDialog
+import androidx.compose.runtime.DisposableEffect
 
 /**
  * The Lottery tab of My Reservations & Entries: the entrant's draw results
@@ -374,13 +375,63 @@ private fun BookingPeriodPicker(
             campsite = found
         }
     }
-    val rulesText = campsite?.getRules() ?: DEFAULT_CAMPSITE_RULES
+    //for us 01.04.01
+    var bookedReservations by remember(lottery.campsiteId) {
+        mutableStateOf<List<Reservation>>(emptyList())
+    }
+    var availabilityLoading by remember(lottery.campsiteId) {
+        mutableStateOf(true)
+    }
+    var availabilityError by remember(lottery.campsiteId) {
+        mutableStateOf(false)
+    }
 
-    val bookable = remember(lottery) {
-        object : SelectableDates {
-            override fun isSelectableDate(utcTimeMillis: Long): Boolean = lottery.isBookableDay(utcTimeMillis)
+
+    DisposableEffect(lottery.campsiteId) {
+        availabilityLoading = true
+        availabilityError = false
+
+        val listener = ReservationRepository.listenForCampsiteReservations(
+            lottery.campsiteId
+        ) { found ->
+            if (found == null) {
+                availabilityError = true
+                bookedReservations = emptyList()
+            } else {
+                bookedReservations = found
+                availabilityError = false
+            }
+            availabilityLoading = false
+        }
+
+        onDispose {
+            listener?.remove()
         }
     }
+
+
+    val rulesText = campsite?.getRules() ?: DEFAULT_CAMPSITE_RULES
+
+
+    val bookable = remember(lottery, bookedReservations, availabilityLoading, availabilityError) {
+        object : SelectableDates {
+            override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+                if (availabilityLoading || availabilityError) return false
+
+                if (!lottery.isBookableDay(utcTimeMillis)) return false
+
+                val selectedDate = CampsiteForm.millisToDate(utcTimeMillis)
+
+                return isDateRangeAvailable(
+                    selectedDate,
+                    selectedDate,
+                    bookedReservations
+                )
+                }
+            }
+        }
+
+
     val state = rememberDateRangePickerState(
         initialDisplayedMonthMillis = if (lottery.bookingStartDate > 0L) lottery.bookingStartDate else null,
         selectableDates = bookable
@@ -388,7 +439,22 @@ private fun BookingPeriodPicker(
     var rulesAgreed by remember { mutableStateOf(false) }
     val start = state.selectedStartDateMillis
     val end = state.selectedEndDateMillis
-    val valid = start != null && end != null && lottery.isWithinBookingPeriod(start, end) && rulesAgreed
+
+    val datesAvailable = start != null && end != null &&
+            isDateRangeAvailable(
+                CampsiteForm.millisToDate(start),
+                CampsiteForm.millisToDate(end),
+                bookedReservations
+        )
+
+    val valid = start != null &&
+            end != null &&
+            lottery.isWithinBookingPeriod(start, end) &&
+            datesAvailable &&
+            !availabilityLoading &&
+            !availabilityError &&
+            rulesAgreed
+
     var saving by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf("") }
 
