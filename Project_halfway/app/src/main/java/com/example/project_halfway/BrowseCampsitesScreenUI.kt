@@ -155,7 +155,12 @@ fun BrowseCampsitesScreenUI(
             isLotteryActive = true,
             onBackClick = { selectedCampsite = null },
             onJoinClick = {},
-            actionArea = { LotterySection(chosen.getId()) }
+            actionArea = {
+                Column {
+                    LotterySection(chosen.getId())
+                    ReviewSection(chosen.getId())
+                }
+            }
         )
     } else if (showFilters) {
         // Display the Add Search Filters layout.
