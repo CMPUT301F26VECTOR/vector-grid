@@ -1,5 +1,6 @@
 package com.example.project_halfway
 
+import android.util.Log
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -97,6 +98,14 @@ fun LotterySection(campsiteId: String) {
                         // Subscribe entrant's device to the topic (US 02.10.01)
                         val topicName = "WAITLIST_CAMPSITE_${current.getLotteryId()}"
                         FirebaseMessaging.getInstance().subscribeToTopic(topicName)
+                            .addOnCompleteListener { task ->
+                                if (task.isSuccessful) {
+                                    Log.d("FCM_TOPIC", "Subscribed to $topicName")
+                                } else {
+                                    Log.e("FCM_TOPIC", "Subscription failed", task.exception)
+                                }
+                            }
+
 
                     } else {
                         current.leaveWaitingList(entrantId)

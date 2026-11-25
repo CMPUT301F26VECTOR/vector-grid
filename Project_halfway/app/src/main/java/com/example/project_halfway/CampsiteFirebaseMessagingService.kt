@@ -1,15 +1,19 @@
 package com.example.project_halfway
 
+import android.Manifest
+import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
-import android.app.NotificationManager.IMPORTANCE_DEFAULT
+import android.app.NotificationManager.IMPORTANCE_HIGH
 import android.app.PendingIntent
 import android.app.PendingIntent.FLAG_IMMUTABLE
 import android.content.Context
 import android.content.Intent
 import android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP
 import android.os.Build
+import androidx.annotation.RequiresPermission
 import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 
@@ -19,8 +23,11 @@ import com.google.firebase.messaging.RemoteMessage
  * Class structure adapted from:
  * https://firebase.blog/posts/2023/08/adding-fcm-to-jetpack-compose-app/
  *
- * Outstanding issues: None known.
- */
+ * Outstanding Issues: As is the Android default, the notification on the target device only
+ * will display if the app is running in the background or not open at all. This can be modified,
+ * but I don't feel like doing it right now and this functionality was never stated in the
+ * requirements.
+ **/
 class CampsiteFirebaseMessagingService : FirebaseMessagingService()  {
     val defaultNotificationChannelId = "waitlist_alerts_channel"
     val defaultChannelName = "Waitlist Alerts"
@@ -46,7 +53,7 @@ class CampsiteFirebaseMessagingService : FirebaseMessagingService()  {
 
         // Check API level:
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(channelId, channelName, IMPORTANCE_DEFAULT).apply {
+            val channel = NotificationChannel(channelId, channelName, IMPORTANCE_HIGH).apply {
                 description = channelDescription
             }
 
@@ -61,16 +68,27 @@ class CampsiteFirebaseMessagingService : FirebaseMessagingService()  {
     /**
      *
      * Adapted from
-     * https://firebase.blog/posts/2023/08/adding-fcm-to-jetpack-compose-app/
+     * https://firebase.blog/posts/2023/08/adding-fcm-to-jetpack-compose-app/ and
+     * https://medium.com/@suraj.bahadur2/firebase-notifications-in-background-foreground-in-android-c658254d4619
      *
      * Outstanding issues: N/A
      *
      * @param remoteMessage
      */
+    @RequiresPermission(Manifest.permission.POST_NOTIFICATIONS)
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
-        remoteMessage.notification?.let { message ->
-            sendNotification(message)
-        }
+        super.onMessageReceived(remoteMessage)
+
+        val notification: Notification = NotificationCompat.Builder(this, defaultNotificationChannelId)
+            .setSmallIcon(R.mipmap.ic_launcher)
+            .setContentTitle(remoteMessage.getNotification()?.getTitle())
+            .setContentText(remoteMessage.getNotification()?.getBody())
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setAutoCancel(true)
+            .build()
+
+        val manager = NotificationManagerCompat.from(applicationContext)
+        manager.notify(123, notification)
     }
 
     /**
@@ -97,8 +115,6 @@ class CampsiteFirebaseMessagingService : FirebaseMessagingService()  {
         val notificationBuilder = NotificationCompat.Builder(this, channelId)
             .setContentTitle(message.title)
             .setContentText(message.body)
-            .setSmallIcon(R.mipmap.ic_launcher)
-            .setAutoCancel(true)
             .setContentIntent(pendingIntent)
 
         // Generates an ID based on the last 9 digits of the timestamp

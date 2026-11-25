@@ -48,7 +48,7 @@ fun notifyWaitlist(context: Context, lotteryId: String, title: String, message: 
             val jsonPayload = """
         {
             "message": {
-                "topic": "WAITLIST_CAMPSITE_${'$'}lotteryId",
+                "topic": "WAITLIST_CAMPSITE_$lotteryId",
                 "notification": {
                     "title": "$title",
                     "body": "$message"
