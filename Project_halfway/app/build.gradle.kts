@@ -28,6 +28,15 @@ android {
         version = release(37)
     }
 
+    packaging {
+        resources {
+            excludes += "META-INF/INDEX.LIST"
+            excludes += "META-INF/DEPENDENCIES"
+            excludes += "META-INF/LICENSE*"
+            excludes += "META-INF/NOTICE*"
+        }
+    }
+
     defaultConfig {
         applicationId = "com.example.project_halfway"
         minSdk = 24
@@ -83,6 +92,13 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
     implementation("androidx.media3:media3-common:1.11.1")
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
+
+    // For notifications
+    implementation("com.google.firebase:firebase-messaging-ktx:24.1.0")
+    implementation("com.google.accompanist:accompanist-permissions:0.30.1")
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    // For generating Authentication Tokens
+    implementation("com.google.auth:google-auth-library-oauth2-http:1.23.0")
   // for image upload
     implementation("com.google.firebase:firebase-storage")
     implementation("io.coil-kt.coil3:coil-compose:3.6.3")

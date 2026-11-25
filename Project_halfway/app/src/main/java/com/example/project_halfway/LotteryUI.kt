@@ -1,5 +1,6 @@
 package com.example.project_halfway
 
+import android.util.Log
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -18,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.google.firebase.messaging.FirebaseMessaging
 
 /**
  * The lottery part of the entrant's campsite details screen.
@@ -92,6 +94,19 @@ fun LotterySection(campsiteId: String) {
                         onList = true
                         count = current.getWaitingListSize()
                         message = "You joined the waiting list!"
+
+                        // Subscribe entrant's device to the topic (US 02.10.01)
+                        val topicName = "WAITLIST_CAMPSITE_${current.getLotteryId()}"
+                        FirebaseMessaging.getInstance().subscribeToTopic(topicName)
+                            .addOnCompleteListener { task ->
+                                if (task.isSuccessful) {
+                                    Log.d("FCM_TOPIC", "Subscribed to $topicName")
+                                } else {
+                                    Log.e("FCM_TOPIC", "Subscription failed", task.exception)
+                                }
+                            }
+
+
                     } else {
                         current.leaveWaitingList(entrantId)
                         message = "Could not join, try again"
@@ -108,6 +123,11 @@ fun LotterySection(campsiteId: String) {
                         onList = false
                         count = current.getWaitingListSize()
                         message = "You left the waiting list"
+
+                        // Remove entrant from the FCM topic:
+                        FirebaseMessaging.getInstance().unsubscribeFromTopic("WAITLIST_CAMPSITE_" +
+                                current.getLotteryId())
+
                     } else {
                         current.joinWaitingList(entrantId, System.currentTimeMillis())
                         message = "Could not leave, try again"

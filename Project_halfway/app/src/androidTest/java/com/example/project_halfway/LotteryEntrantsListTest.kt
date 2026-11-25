@@ -28,12 +28,24 @@ class LotteryEntrantsListTest {
 
     @Test
     fun emptyWaitlist_showsEmptyMessage() {
+        val lottery = Lottery(
+            "",
+            "",
+            startDate = 0,
+            endDate = 0,
+            waitingList = emptyList(),
+            numberOfWinners = 0,
+            winners = emptyList(),
+            notSelected = emptyList(),
+            isDrawn = false,
+            bookingStartDate = 0,
+            bookingEndDate = 0,
+            waitlistCapacity = 0,
+            campsiteIds = emptyList()
+        )
         composeRule.setContent {
-            LotteryEntrantsList(
-                waitlistNames = emptyList(),
-                winnerNames = emptyList(),
-                isDrawn = false
-            )
+            LotteryEntrantsList(lottery,
+                waitlistNames = emptyList(), winnerNames = emptyList(), isDrawn = false)
         }
 
         composeRule.onNodeWithTag("waitlist_count")
@@ -45,8 +57,24 @@ class LotteryEntrantsListTest {
 
     @Test
     fun waitlist_showsEveryNameAndTheCount() {
+        val lottery = Lottery(
+            "",
+            "",
+            startDate = 0,
+            endDate = 0,
+            waitingList = emptyList(),
+            numberOfWinners = 0,
+            winners = emptyList(),
+            notSelected = emptyList(),
+            isDrawn = false,
+            bookingStartDate = 0,
+            bookingEndDate = 0,
+            waitlistCapacity = 0,
+            campsiteIds = emptyList()
+        )
         composeRule.setContent {
             LotteryEntrantsList(
+                lottery,
                 waitlistNames = listOf("Priya Shah", "Tom Nguyen"),
                 winnerNames = emptyList(),
                 isDrawn = false
@@ -65,12 +93,24 @@ class LotteryEntrantsListTest {
 
     @Test
     fun winnersTab_beforeDraw_saysNotDrawnYet() {
+        val lottery = Lottery(
+            "",
+            "",
+            startDate = 0,
+            endDate = 0,
+            waitingList = emptyList(),
+            numberOfWinners = 0,
+            winners = emptyList(),
+            notSelected = emptyList(),
+            isDrawn = false,
+            bookingStartDate = 0,
+            bookingEndDate = 0,
+            waitlistCapacity = 0,
+            campsiteIds = emptyList()
+        )
         composeRule.setContent {
-            LotteryEntrantsList(
-                waitlistNames = listOf("Priya Shah"),
-                winnerNames = emptyList(),
-                isDrawn = false
-            )
+            LotteryEntrantsList(lottery,
+                waitlistNames = listOf("Priya Shah"), winnerNames = emptyList(), isDrawn = false)
         }
 
         composeRule.onNodeWithTag("winners_tab")
@@ -84,8 +124,24 @@ class LotteryEntrantsListTest {
 
     @Test
     fun winnersTab_afterDraw_showsWinners() {
+        val lottery = Lottery(
+            "",
+            "",
+            startDate = 0,
+            endDate = 0,
+            waitingList = emptyList(),
+            numberOfWinners = 0,
+            winners = emptyList(),
+            notSelected = emptyList(),
+            isDrawn = false,
+            bookingStartDate = 0,
+            bookingEndDate = 0,
+            waitlistCapacity = 0,
+            campsiteIds = emptyList()
+        )
+
         composeRule.setContent {
-            LotteryEntrantsList(
+            LotteryEntrantsList( lottery,
                 waitlistNames = listOf("Priya Shah", "Tom Nguyen"),
                 winnerNames = listOf("Tom Nguyen"),
                 isDrawn = true
