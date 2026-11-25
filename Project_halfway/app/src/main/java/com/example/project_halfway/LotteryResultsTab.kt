@@ -49,8 +49,12 @@ import androidx.compose.runtime.DisposableEffect
  * Reserve dates and pick their stay, but only inside the lottery's booking
  * period (US 02.04.04); the reservation is then shown on the card.
  *
+ * An entrant with a reservation can also write a message to the campsite
+ * owner under it (US 01.14.01, see MessageOwnerSection).
+ *
  * Outstanding issues: a reservation can't be changed or cancelled yet
  * (US 01.07.01), and multi-campsite lotteries aren't supported (US 01.04.02).
+ * The owner can't read the entrant's messages yet; that is the owner's story.
  */
 @Composable
 fun LotteryResultsTab() {
@@ -109,7 +113,13 @@ fun LotteryResultsTab() {
                 reservedText = reservation?.let { WaitlistHelper.reservedText(it) },
                 offerStatus = result.offerStatus,
                 onReserve = { reserving = result },
-                onDecline = { declining = result }
+                onDecline = { declining = result },
+                // US 01.14.01: an entrant with a reservation can message the owner
+                messageArea = {
+                    if (reservation != null && !reservation.isCancelled()) {
+                        MessageOwnerSection(reservation.id, reservation.campsiteId)
+                    }
+                }
             )
         }
 
@@ -240,6 +250,7 @@ fun DeclineOfferConfirmationDialog(
  * @param offerStatus the winner's reservation offer status (US 01.04.03)
  * @param onReserve called when Reserve dates is pressed
  * @param onDecline called when Decline offer is pressed (US 01.04.03)
+ * @param messageArea shown under the reserved dates, for writing to the owner (US 01.14.01)
  */
 @Composable
 fun LotteryResultCard(
@@ -249,8 +260,8 @@ fun LotteryResultCard(
     reservedText: String?,
     offerStatus: String = LotteryResultNotification.OFFER_PENDING,
     onDecline: () -> Unit = {},
-    onReserve: () -> Unit = {}
-
+    onReserve: () -> Unit = {},
+    messageArea: @Composable () -> Unit = {}
 ) {
     Card(
         modifier = Modifier
@@ -276,6 +287,7 @@ fun LotteryResultCard(
                         color = AppGreen,
                         modifier = Modifier.padding(top = 8.dp).testTag("reserved_text")
                     )
+                    messageArea()
                 } else if (offerStatus == LotteryResultNotification.OFFER_DECLINED) {
 
                     /** Shows that the winner has declined their reservation offer. */
