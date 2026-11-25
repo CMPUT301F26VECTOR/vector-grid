@@ -27,7 +27,7 @@ import androidx.compose.ui.unit.sp
 fun AdminHomeScreen () {
     //this design is taken exaclty from the auth gate we implemented
     // it design is same
-   var myScreen by remember{ mutableStateOf("home") }
+    var myScreen by remember{ mutableStateOf("home") }
 
     when(myScreen) {
         "home" -> {
@@ -114,6 +114,36 @@ fun AdminHomeScreen () {
                         fontSize = 16.sp
                     )
                 }
+
+                // for reviews (US 03.10.01)
+                Button(
+                    onClick = {
+                        myScreen = "Reviews"
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = AppGreen
+                    )
+                ) {
+                    Text(
+                        text = "Reviews",
+                        fontSize = 16.sp
+                    )
+                }
+
+                // for ratings (US 03.09.01)
+                Button(
+                    onClick = {
+                        myScreen = "Ratings"
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = AppGreen
+                    )
+                ) {
+                    Text(
+                        text = "Ratings",
+                        fontSize = 16.sp
+                    )
+                }
             }
         }
 
@@ -138,6 +168,18 @@ fun AdminHomeScreen () {
 
         "Images" -> {
             ImagesListUI(
+                toback = { myScreen = "home" }
+            )
+        }
+
+        "Reviews" -> {
+            AdminReviewsScreen(
+                toback = { myScreen = "home" }
+            )
+        }
+
+        "Ratings" -> {
+            AdminRatingsScreen(
                 toback = { myScreen = "home" }
             )
         }
