@@ -99,6 +99,10 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     // For generating Authentication Tokens
     implementation("com.google.auth:google-auth-library-oauth2-http:1.23.0")
+  // for image upload
+    implementation("com.google.firebase:firebase-storage")
+    implementation("io.coil-kt.coil3:coil-compose:3.6.3")
+    implementation("io.coil-kt.coil3:coil-network-okhttp:3.6.3")
 }
 // Dokka: builds HTML documentation from the KDoc comments in the code.
 // Run  ./gradlew :app:dokkaGenerate  and open app/build/dokka/html/index.html

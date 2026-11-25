@@ -8,6 +8,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.outlined.EventNote
 import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.foundation.layout.statusBarsPadding
 import android.widget.Toast
@@ -56,6 +57,28 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
+///////////////////////////////////
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.draw.clip
+import coil3.compose.AsyncImage
+import com.google.firebase.storage.FirebaseStorage
+import com.google.firebase.storage.StorageMetadata
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+
+import androidx.compose.ui.graphics.Outline
+import com.google.firebase.auth.FirebaseAuth
+
+///////////////////////////////////
+
+
 /**
  * Displays the entrant home screen.
  *
@@ -95,6 +118,10 @@ fun EntrantHomeScreenUI(
     var viewPolicyGuidelines by remember {mutableStateOf(false)}
 
     val uid = FirebaseSecurity.auth.currentUser?.uid
+
+    // Parneet: shows phone pop-ups for new notifications while the app is open (US 01.03.01, 01.03.02)
+    NotificationWatcher()
+
     if (openDialog){
         AlertDialog(
             onDismissRequest = {openDialog = false},
@@ -238,6 +265,11 @@ fun EntrantHomeScreenUI(
 
         // The entrant's details, in a white panel like the rest of the app
         WhitePanel {
+
+            if (uid != null){
+                profileImageEntrant(uid)
+                Spacer(modifier = Modifier.height(18.dp))
+            }
             if (isediting) {
                 OutlinedTextField(
                     value = nameEdited,
@@ -354,6 +386,15 @@ fun EntrantHomeScreenUI(
         )
         Spacer(modifier = Modifier.height(12.dp))
 
+        // Parneet: card for the Notifications screen (US 01.03.01, 01.03.02, 01.05.02, 01.07.02, 01.10.01)
+        HomeCard(
+            icon = Icons.Outlined.Notifications,
+            title = "Notifications",
+            subtitle = "Lottery results, reservations and cancellations",
+            onClick = { context.startActivity(Intent(context, NotificationsActivity::class.java)) }
+        )
+        Spacer(modifier = Modifier.height(12.dp))
+
         // Card for the app's policy and lottery guidelines
         HomeCard(
             icon = Icons.Outlined.Info,
@@ -409,3 +450,170 @@ private fun DetailLine(label: String, value: String) {
 //fun EntrantHomeScreenPreview() {
 //    EntrantHomeScreenUI()
 //}
+
+
+// this part of the code has been implemented with OpenAI ChatGPT 2026-11-11,
+@Composable
+fun profileImageEntrant(uid:String) {
+    //we get the database object
+    // since we have the uid we will trace back the entrant database
+    val db = FirebaseSecurity.db
+    val context = LocalContext.current
+    val firebaseStorage = remember { FirebaseStorage.getInstance() }
+    //this variable is added beacuse we need to keep in check if image upload
+    //is on going or not
+    var Loading by remember { mutableStateOf(false) }
+    //when uid changes it resets whcih means
+    // if a new user comes it is ""
+    var URL by remember(uid) { mutableStateOf("") }
+    var entrantDocument = remember(uid) {db.collection("Users").document(uid)  }
+
+
+    //this is used when the app is launched it retrieves the profile
+    //picture from tge database
+    LaunchedEffect(uid) { entrantDocument.get().addOnSuccessListener { document->
+        URL = document.getString("ProfilePicture")?:""
+    }}
+
+    //the first step is pick a photo and we will open the gallery with
+    //these lines of code
+    val PhotoPicker = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+        //after the entrant has seleected the picture we will have
+
+    ) {
+        uri->
+        if (uri!=null&& !Loading ){
+            Loading = true
+            // this is the one we retrieved from database
+            //we need to keep it because we will use it to delete the old
+            //profile picture from the storage
+            var oldimageURL = URL
+
+            //now we create the path to the image
+            val ImageReference = firebaseStorage.reference.child(
+                "profileImages/$uid/${java.util.UUID.randomUUID()}"
+            )
+
+            //here we will just get the type of the image
+            val Mdata = StorageMetadata.Builder()
+                .setContentType(context.contentResolver.getType(uri)?:"image/jpeg").build()
+            //until this part we jsut uploaded the image
+            // from here we will update the profile pic link in the entrant database
+            ImageReference.putFile(uri,Mdata).addOnSuccessListener {
+                ImageReference.downloadUrl.addOnSuccessListener { downloadedURL->
+                   val newURL = downloadedURL.toString() // since in db it is a string
+                    entrantDocument.update("ProfilePicture",newURL).addOnSuccessListener {
+                        URL = newURL
+                        Loading = false
+
+                        if (oldimageURL.isNotBlank()){
+                            try{firebaseStorage.getReferenceFromUrl(oldimageURL).delete()}
+                            catch(_:IllegalArgumentException){}
+                        }
+                        Toast.makeText(
+                            context,
+                            "Profile Image saved successfully!",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+
+                }.addOnFailureListener { ImageReference.delete()
+                Loading = false
+                Toast.makeText(
+                    context,
+                    "Image not saved!",
+                    Toast.LENGTH_LONG
+                ).show()
+                }
+            }
+
+        }
+
+    }
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ){
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier= Modifier.size(120.dp)
+        ){
+            if (URL.isNotBlank()){
+                ProfileImage(URL)
+            }else{
+                defaultIcon()
+            }
+
+        }
+        Button(
+            onClick = {
+                PhotoPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+            },
+            colors = greenButtonColors(),
+            enabled = !Loading,
+
+        ){
+            Text(if (URL.isBlank())"Add Pic"
+            else "Change Pic"
+            )
+        }
+        //this remove picture is only shown when the image is already there
+        // and we want to remove the image
+        if(URL.isNotBlank()){
+            Button(
+                colors = dangerButtonColors(),
+                enabled = !Loading,
+                onClick ={
+                    Loading = true
+                    val oldImageURL =URL
+                    entrantDocument.update("ProfilePicture","")// we remove the URL
+                        .addOnSuccessListener { URL =""// here the url will be "" so ui will be
+                            // updated again
+                        Loading = false
+
+                        //here we will just delete the old picture
+                        try{firebaseStorage.getReferenceFromUrl(oldImageURL).delete()}
+                        catch(_: IllegalArgumentException){}
+                        Toast.makeText(
+                            context,
+                            "Image Removed Successfully!",
+                            Toast.LENGTH_LONG
+                        ).show()
+                        }
+                }
+            ){
+                Text(text ="Remove Pic")
+            }
+        }
+
+    }
+
+}
+@Composable
+fun ProfileImage(URL:String){
+    AsyncImage(
+        contentDescription = "Profile Pic",
+        model = URL,
+        contentScale = ContentScale.Crop,
+        modifier =  Modifier.fillMaxSize()
+            .clip(RoundedCornerShape(55.dp))
+
+                )
+}
+
+@Composable
+fun defaultIcon(){
+    Icon(
+        imageVector = Icons.Outlined.AccountCircle,
+        contentDescription = "Default picture",
+        modifier  = Modifier.size(100.dp),
+        tint = AppGreen
+    )
+}
+
+
+
+
+

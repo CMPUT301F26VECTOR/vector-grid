@@ -12,11 +12,11 @@ import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-
 /**
- * UI tests for LotteryCampsitesList (US 02.04.02): every campsite of the
- * lottery is shown, and the owner can remove one only before registration
- * opens and never the last one. Nothing is loaded from Firestore.
+ * UI tests for LotteryCampsitesList (US 02.04.02, US 02.04.08): every campsite
+ * of the lottery is shown, and the owner can remove one only before registration
+ * opens and never the last one. Campsites of other owners are labelled and can't
+ * be removed. Nothing is loaded from Firestore.
  */
 @RunWith(AndroidJUnit4::class)
 class LotteryCampsitesListTest {
@@ -89,5 +89,26 @@ class LotteryCampsitesListTest {
 
         composeRule.onNodeWithTag("remove_campsite_camp1").assertIsNotEnabled()
         composeRule.onNodeWithTag("lottery_campsites_note").assertIsDisplayed()
+    }
+
+    @Test
+    fun otherOwnersCampsite_isLabelledAndCannotBeRemoved() {
+        composeRule.setContent {
+            LotteryCampsitesList(
+                campsites = twoCampsites,
+                registrationStarted = false,
+                message = "",
+                onRemove = {},
+                otherOwnerIds = setOf("camp2")
+            )
+        }
+
+        // the other owner's campsite says so and its Remove is off (US 02.04.08)
+        composeRule.onNodeWithTag("lottery_campsite_camp2").assertTextEquals("Hilltop (other owner)")
+        composeRule.onNodeWithTag("remove_campsite_camp2").assertIsNotEnabled()
+
+        // the owner's own campsite is unchanged
+        composeRule.onNodeWithTag("lottery_campsite_camp1").assertTextEquals("Lakeside")
+        composeRule.onNodeWithTag("remove_campsite_camp1").assertIsEnabled()
     }
 }

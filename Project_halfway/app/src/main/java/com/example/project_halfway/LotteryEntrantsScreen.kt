@@ -66,6 +66,10 @@ fun LotteryEntrantsScreen(campsiteId: String) {
     var lottery by remember { mutableStateOf<Lottery?>(null) }
     var names by remember { mutableStateOf(mapOf<String, String>()) }
 
+    // Offer status for each winner in the selected lottery (US 01.04.03).
+    var offerStatuses by remember { mutableStateOf(mapOf<String, String>()) }
+
+
     LaunchedEffect(campsiteId) {
         LotteryRepository.getLotteriesForCampsite(campsiteId) { found ->
             lotteries = newestFirst(found)
@@ -75,21 +79,41 @@ fun LotteryEntrantsScreen(campsiteId: String) {
         }
     }
 
-    // Load the chosen lottery whenever the owner picks another one
+
+    // Load the selected lottery, entrant names and offer statuses.
     LaunchedEffect(selectedId) {
         val id = selectedId ?: return@LaunchedEffect
-        val chosen = lotteries.firstOrNull { it.id == id } ?: return@LaunchedEffect
+        val chosen = lotteries.firstOrNull { it.id == id }
+            ?: return@LaunchedEffect
+
         loading = true
-        // US 02.05.01: draws now if registration closed and nobody drew yet
+        offerStatuses = emptyMap()
+
+        // US 02.05.01: draw winners when registration has closed.
         LotteryRepository.drawIfDue(chosen.id) { afterDraw ->
-            val current = afterDraw ?: chosen
-            lottery = current
-            LotteryRepository.getEntrantNames(current.waitingList) { found ->
-                names = found
-                loading = false
+            if (selectedId == id) {
+                val current = afterDraw ?: chosen
+                lottery = current
+
+                LotteryRepository.getEntrantNames(current.waitingList) { found ->
+                    if (selectedId == id) {
+                        names = found
+
+                        // US 01.04.03: load each winner's offer status.
+                        ReservationRepository.getOfferStatusesForLottery(
+                            current.id
+                        ) { statuses ->
+                            if (selectedId == id) {
+                                offerStatuses = statuses
+                                loading = false
+                            }
+                        }
+                    }
+                }
             }
         }
     }
+
 
     if (lotteries.isEmpty()) {
         Text(
@@ -117,8 +141,13 @@ fun LotteryEntrantsScreen(campsiteId: String) {
                 lottery = current,
                 waitlistNames = current.waitingList.map { names[it] ?: it },
                 winnerNames = current.winners.map { names[it] ?: it },
-                isDrawn = current.isDrawn
+                isDrawn = current.isDrawn,
+                winnerStatuses = current.winners.map { entrantId ->
+                    offerStatuses[entrantId]
+                        ?: LotteryResultNotification.OFFER_PENDING
+                }
             )
+
         }
     }
 }
@@ -188,7 +217,8 @@ fun LotteryEntrantsList(
     lottery: Lottery,
     waitlistNames: List<String>,
     winnerNames: List<String>,
-    isDrawn: Boolean
+    isDrawn: Boolean,
+    winnerStatuses: List<String> = emptyList()
 ) {
     // which tab is open: false = WAITLIST, true = WINNERS
     var showWinners by remember { mutableStateOf(false) }
@@ -214,7 +244,10 @@ fun LotteryEntrantsList(
                     modifier = Modifier.padding(top = 12.dp).testTag("winners_message")
                 )
             } else {
-                NameList(winnerNames, "winners_list")
+                WinnerOfferList(
+                    winnerNames = winnerNames,
+                    winnerStatuses = winnerStatuses
+                )
             }
         } else {
             if(!showSendNotificationScreen) {
@@ -266,6 +299,49 @@ private fun NameList(names: List<String>, tag: String) {
     LazyColumn(modifier = Modifier.testTag(tag)) {
         items(names) { name ->
             Text(name, modifier = Modifier.padding(vertical = 6.dp))
+        }
+    }
+}
+
+
+/**
+ * Shows lottery winners and identifies declined offers for the campsite owner (US 01.04.03).
+ *
+ * @param winnerNames names of the lottery winners
+ * @param winnerStatuses offer statuses in the same order
+ */
+@Composable
+private fun WinnerOfferList(
+    winnerNames: List<String>,
+    winnerStatuses: List<String>
+) {
+    LazyColumn(modifier = Modifier.testTag("winners_list")) {
+        items(winnerNames.size) { index ->
+            val name = winnerNames[index]
+            val status = winnerStatuses.getOrNull(index)
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 6.dp),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = name,
+                    modifier = Modifier.weight(1f)
+                )
+
+                if (status == LotteryResultNotification.OFFER_DECLINED) {
+                    Text(
+                        text = "Offer declined",
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier
+                            .padding(start = 8.dp)
+                            .testTag("offer_declined_$index")
+                    )
+                }
+            }
         }
     }
 }

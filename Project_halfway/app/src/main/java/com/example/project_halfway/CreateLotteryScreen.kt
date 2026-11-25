@@ -33,13 +33,15 @@ import androidx.compose.ui.Alignment
  * LotteryRepository.save. Entrants then see it on the campsite's details.
  *
  * Also used for US 02.04.03, US 02.04.04, US 02.04.05 and US 02.04.07.
+ * The owner can also pick campsites that belong to other owners (US 02.04.08);
+ * their own campsites are listed first.
  *
  * Outstanding issues: Save is turned off after one lottery is created, so the
  * owner has to go back and open the screen again to create another.
  *
  * @param campsiteId id of the campsite the lottery is for; saving is refused if blank
  * @param campsiteName name shown in the title so the owner knows which campsite it is for
- * @param ownerId id of the signed-in owner, used to load their campsites; blank means no list
+ * @param ownerId id of the signed-in owner; their own campsites are listed first and other owners' campsites are labelled
  * @param initialCampsites campsites to show right away (tests use this instead of Firestore)
  * @param initialSettings what the form starts with; empty by default
  * @param save stores the lottery and reports whether it worked; LotteryRepository.save
@@ -68,10 +70,13 @@ fun CreateLotteryScreen(
         mutableStateOf(if (campsiteId.isBlank()) emptyList() else listOf(campsiteId))
     }
 
-    LaunchedEffect(ownerId) {
-        if (ownerId.isNotBlank()) {
-            CampsiteRepository.getByOwner(ownerId) { found -> ownerCampsites = found }
-        }
+        LaunchedEffect(ownerId) {
+            if (initialCampsites.isEmpty()) {
+                // Every campsite, so the owner can add other owners' campsites (US 02.04.08). Their own come first.
+                CampsiteRepository.getAll { found ->
+                    ownerCampsites = found.sortedByDescending { it.getOwnerId() == ownerId }
+                }
+            }
     }
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
@@ -99,7 +104,8 @@ fun CreateLotteryScreen(
                             },
                             modifier = Modifier.testTag("campsite_check_$id")
                         )
-                        Text(campsite.getCampsiteName())
+                        val owner = if (campsite.getOwnerId() == ownerId) "" else " (other owner)"
+                        Text(campsite.getCampsiteName() + owner)
                     }
                 }
             }

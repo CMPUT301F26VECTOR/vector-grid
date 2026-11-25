@@ -38,6 +38,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.AlertDialog
+import androidx.compose.runtime.DisposableEffect
 
 /**
  * The Lottery tab of My Reservations & Entries: the entrant's draw results
@@ -45,8 +49,12 @@ import androidx.compose.ui.unit.sp
  * Reserve dates and pick their stay, but only inside the lottery's booking
  * period (US 02.04.04); the reservation is then shown on the card.
  *
+ * An entrant with a reservation can also write a message to the campsite
+ * owner under it (US 01.14.01, see MessageOwnerSection).
+ *
  * Outstanding issues: a reservation can't be changed or cancelled yet
  * (US 01.07.01), and multi-campsite lotteries aren't supported (US 01.04.02).
+ * The owner can't read the entrant's messages yet; that is the owner's story.
  */
 @Composable
 fun LotteryResultsTab() {
@@ -60,6 +68,8 @@ fun LotteryResultsTab() {
     var message by remember { mutableStateOf("") }
     // the win the entrant is reserving dates for, while the calendar is open
     var reserving by remember { mutableStateOf<LotteryResultNotification?>(null) }
+    // The winning offer the entrant wants to decline (US 01.04.03).
+    var declining by remember { mutableStateOf<LotteryResultNotification?>(null) }
 
     LaunchedEffect(entrantId) {
         if (entrantId == "") {
@@ -101,7 +111,15 @@ fun LotteryResultsTab() {
                 message = result.message,
                 isWin = result.isWin(),
                 reservedText = reservation?.let { WaitlistHelper.reservedText(it) },
-                onReserve = { reserving = result }
+                offerStatus = result.offerStatus,
+                onReserve = { reserving = result },
+                onDecline = { declining = result },
+                // US 01.14.01: an entrant with a reservation can message the owner
+                messageArea = {
+                    if (reservation != null && !reservation.isCancelled()) {
+                        MessageOwnerSection(reservation.id, reservation.campsiteId)
+                    }
+                }
             )
         }
 
@@ -123,7 +141,102 @@ fun LotteryResultsTab() {
             }
         )
     }
+    // Confirms that the entrant wants to decline their winning offer (US 01.04.03).
+    val offer = declining
+
+    if (offer != null) {
+        var decliningInProgress by remember { mutableStateOf(false) }
+
+
+        DeclineOfferConfirmationDialog(
+            decliningInProgress = decliningInProgress,
+            onDismiss = {
+                declining = null
+            },
+            onConfirm = {
+                decliningInProgress = true
+
+                ReservationRepository.declineOffer(
+                    notificationId = offer.id,
+                    entrantId = entrantId
+                ) { success ->
+                    decliningInProgress = false
+
+                    if (success) {
+                        val index = results.indexOfFirst {
+                            it.id == offer.id
+                        }
+
+                        if (index != -1) {
+                            results[index] = results[index].copy(
+                                offerStatus =
+                                    LotteryResultNotification.OFFER_DECLINED
+                            )
+                        }
+
+                        declining = null
+                        message = "Reservation offer declined"
+                    } else {
+                        declining = null
+                        message = "Could not decline the offer. Please try again."
+                    }
+                }
+            }
+        )
+
+    }
 }
+
+
+/**
+ * Confirmation dialog for declining a winning lottery offer.
+ * US 01.04.03 - Acceptance Criterion 2.
+ *
+ * @param decliningInProgress true while saving the decline
+ * @param onDismiss called when the entrant keeps the offer
+ * @param onConfirm called when the entrant confirms declining
+ */
+@Composable
+fun DeclineOfferConfirmationDialog(
+    decliningInProgress: Boolean,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = {
+            if (!decliningInProgress) onDismiss()
+        },
+        title = {
+            Text("Decline reservation offer?")
+        },
+        text = {
+            Text(
+                "Are you sure you want to decline? " +
+                        "You won't be able to reserve dates " +
+                        "for this offer afterward."
+            )
+        },
+        confirmButton = {
+            TextButton(
+                enabled = !decliningInProgress,
+                onClick = onConfirm,
+                modifier = Modifier.testTag("confirm_decline")
+            ) {
+                Text("Decline", color = Color.Red)
+            }
+        },
+        dismissButton = {
+            TextButton(
+                enabled = !decliningInProgress,
+                onClick = onDismiss,
+                modifier = Modifier.testTag("keep_offer")
+            ) {
+                Text("Keep offer")
+            }
+        }
+    )
+}
+
 
 /**
  * One draw result: the campsite, whether the entrant won, and for a winner
@@ -134,7 +247,10 @@ fun LotteryResultsTab() {
  * @param message the notification text
  * @param isWin true if the entrant won
  * @param reservedText e.g. "Reserved: 2026-11-10 to 2026-11-12", or null if not reserved yet
+ * @param offerStatus the winner's reservation offer status (US 01.04.03)
  * @param onReserve called when Reserve dates is pressed
+ * @param onDecline called when Decline offer is pressed (US 01.04.03)
+ * @param messageArea shown under the reserved dates, for writing to the owner (US 01.14.01)
  */
 @Composable
 fun LotteryResultCard(
@@ -142,7 +258,10 @@ fun LotteryResultCard(
     message: String,
     isWin: Boolean,
     reservedText: String?,
-    onReserve: () -> Unit
+    offerStatus: String = LotteryResultNotification.OFFER_PENDING,
+    onDecline: () -> Unit = {},
+    onReserve: () -> Unit = {},
+    messageArea: @Composable () -> Unit = {}
 ) {
     Card(
         modifier = Modifier
@@ -168,13 +287,40 @@ fun LotteryResultCard(
                         color = AppGreen,
                         modifier = Modifier.padding(top = 8.dp).testTag("reserved_text")
                     )
+                    messageArea()
+                } else if (offerStatus == LotteryResultNotification.OFFER_DECLINED) {
+
+                    /** Shows that the winner has declined their reservation offer. */
+                    Text(
+                        text = "Offer declined",
+                        color = Color.Gray,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier
+                            .padding(top = 8.dp)
+                            .testTag("offer_declined")
+                    )
+
                 } else {
-                    Button(
-                        onClick = onReserve,
-                        colors = greenButtonColors(),
-                        modifier = Modifier.padding(top = 8.dp).testTag("reserve_button")
+
+                    /** Allows a winner to reserve dates or decline their offer (US 01.04.03). */
+                    Row(
+                        modifier = Modifier.padding(top = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Text("Reserve dates")
+                        Button(
+                            onClick = onReserve,
+                            colors = greenButtonColors(),
+                            modifier = Modifier.testTag("reserve_button")
+                        ) {
+                            Text("Reserve dates")
+                        }
+
+                        OutlinedButton(
+                            onClick = onDecline,
+                            modifier = Modifier.testTag("decline_button")
+                        ) {
+                            Text("Decline offer")
+                        }
                     }
                 }
             }
@@ -241,13 +387,63 @@ private fun BookingPeriodPicker(
             campsite = found
         }
     }
-    val rulesText = campsite?.getRules() ?: DEFAULT_CAMPSITE_RULES
+    //for us 01.04.01
+    var bookedReservations by remember(lottery.campsiteId) {
+        mutableStateOf<List<Reservation>>(emptyList())
+    }
+    var availabilityLoading by remember(lottery.campsiteId) {
+        mutableStateOf(true)
+    }
+    var availabilityError by remember(lottery.campsiteId) {
+        mutableStateOf(false)
+    }
 
-    val bookable = remember(lottery) {
-        object : SelectableDates {
-            override fun isSelectableDate(utcTimeMillis: Long): Boolean = lottery.isBookableDay(utcTimeMillis)
+
+    DisposableEffect(lottery.campsiteId) {
+        availabilityLoading = true
+        availabilityError = false
+
+        val listener = ReservationRepository.listenForCampsiteReservations(
+            lottery.campsiteId
+        ) { found ->
+            if (found == null) {
+                availabilityError = true
+                bookedReservations = emptyList()
+            } else {
+                bookedReservations = found
+                availabilityError = false
+            }
+            availabilityLoading = false
+        }
+
+        onDispose {
+            listener?.remove()
         }
     }
+
+
+    val rulesText = campsite?.getRules() ?: DEFAULT_CAMPSITE_RULES
+
+
+    val bookable = remember(lottery, bookedReservations, availabilityLoading, availabilityError) {
+        object : SelectableDates {
+            override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+                if (availabilityLoading || availabilityError) return false
+
+                if (!lottery.isBookableDay(utcTimeMillis)) return false
+
+                val selectedDate = CampsiteForm.millisToDate(utcTimeMillis)
+
+                return isDateRangeAvailable(
+                    selectedDate,
+                    selectedDate,
+                    bookedReservations
+                )
+                }
+            }
+        }
+
+
     val state = rememberDateRangePickerState(
         initialDisplayedMonthMillis = if (lottery.bookingStartDate > 0L) lottery.bookingStartDate else null,
         selectableDates = bookable
@@ -255,7 +451,22 @@ private fun BookingPeriodPicker(
     var rulesAgreed by remember { mutableStateOf(false) }
     val start = state.selectedStartDateMillis
     val end = state.selectedEndDateMillis
-    val valid = start != null && end != null && lottery.isWithinBookingPeriod(start, end) && rulesAgreed
+
+    val datesAvailable = start != null && end != null &&
+            isDateRangeAvailable(
+                CampsiteForm.millisToDate(start),
+                CampsiteForm.millisToDate(end),
+                bookedReservations
+        )
+
+    val valid = start != null &&
+            end != null &&
+            lottery.isWithinBookingPeriod(start, end) &&
+            datesAvailable &&
+            !availabilityLoading &&
+            !availabilityError &&
+            rulesAgreed
+
     var saving by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf("") }
 
@@ -345,7 +556,24 @@ private fun BookingPeriodPicker(
 @Composable
 private fun LotteryResultCardPreview() {
     Column(Modifier.padding(16.dp)) {
-        LotteryResultCard("Site 7 – Upper Waterton", LotteryResultNotification.WON_MESSAGE, true, null, {})
-        LotteryResultCard("Site 42 - Lakeview", LotteryResultNotification.NOT_SELECTED_MESSAGE, false, null, {})
+        LotteryResultCard(
+            "Site 7 – Upper Waterton",
+            LotteryResultNotification.WON_MESSAGE,
+            true,
+            null,
+            LotteryResultNotification.OFFER_PENDING,
+            {},
+            {}
+        )
+
+        LotteryResultCard(
+            "Site 42 - Lakeview",
+            LotteryResultNotification.NOT_SELECTED_MESSAGE,
+            false,
+            null,
+            LotteryResultNotification.OFFER_PENDING,
+            {},
+            {}
+        )
     }
 }
