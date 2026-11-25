@@ -2,6 +2,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- Parneet: lets the app show phone pop-ups on Android 13+ (US 01.03.01, 01.03.02) -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -45,6 +48,11 @@
         <!-- Parneet: My Reservations & Entries, Waitlisted tab (US 01.02.01, 01.02.02) -->
         <activity android:name=".MyEntriesActivity"
             android:exported="false"/>
+
+        <!-- Parneet: entrant Notifications screen (US 01.03.01, 01.03.02, 01.05.02, 01.07.02, 01.10.01) -->
+        <activity android:name=".NotificationsActivity"
+            android:exported="false"/>
+
     </application>
 
 </manifest>

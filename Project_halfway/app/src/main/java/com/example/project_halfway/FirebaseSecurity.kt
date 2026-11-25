@@ -4,7 +4,7 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.FirebaseOptions
-
+import com.google.firebase.storage.FirebaseStorage
 /**
  * The app's Firebase connections, shared by every screen.
  *
@@ -61,4 +61,37 @@ object FirebaseSecurity {
     val ownerDb: FirebaseFirestore by lazy {
         FirebaseFirestore.getInstance(ownerApp)
     }
+
+    val ownerStorage: FirebaseStorage by lazy{
+        FirebaseStorage.getInstance(ownerApp)
+    }
+
+    //third session for admin
+    //here we will create a session for the Admin part
+    //this part will be very similar to the campsite owner part
+    //above
+
+    private val AdminPart: FirebaseApp by lazy { // by lazy means we don't initalize the fbapp  unitl needed
+        val defaultApp = FirebaseApp.getInstance()
+        //until the find we just look if admin part already exists thats why we have find part
+        // if it doesn't find admin part it returns null and so we intialize the app
+        FirebaseApp.getApps(defaultApp.applicationContext).find { it.name == "AdminPart" }
+            ?: FirebaseApp.initializeApp(
+                defaultApp.applicationContext,//here we are jsut creating the app since it doesnt exits
+                defaultApp.options,//or the find has returned a null to us
+                "AdminPart"
+            )!!
+    }
+        val adminAuth: FirebaseAuth by lazy{
+            FirebaseAuth.getInstance(AdminPart)
+        }
+        val adminDB: FirebaseFirestore by lazy{
+            FirebaseFirestore.getInstance(AdminPart)
+        }
+        val adminStorage: FirebaseStorage by lazy{
+            FirebaseStorage.getInstance(AdminPart)
+        }
+
+
+
 }

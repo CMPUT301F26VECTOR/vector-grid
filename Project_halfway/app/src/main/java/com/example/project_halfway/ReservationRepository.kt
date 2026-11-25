@@ -18,6 +18,59 @@ object ReservationRepository {
     private fun notifications() = FirebaseSecurity.db.collection("notifications")
 
     /**
+     * Declines a winner's reservation offer (US 01.04.03).
+     *
+     * Updates the offer status in Firestore without changing the lottery result.
+     * Only the signed-in winner can decline their own pending offer.
+     *
+     * @param notificationId the Firestore document id of the winning notification
+     * @param entrantId the entrant declining the offer
+     * @param onDone true if the offer was declined, false otherwise
+     */
+    fun declineOffer(
+        notificationId: String,
+        entrantId: String,
+        onDone: (Boolean) -> Unit
+    ) {
+        val currentUserId = FirebaseSecurity.auth.currentUser?.uid
+
+        if (notificationId.isBlank() || entrantId.isBlank() || currentUserId != entrantId) {
+            onDone(false)
+            return
+        }
+
+        val document = notifications().document(notificationId)
+
+        FirebaseSecurity.db.runTransaction { transaction ->
+            val snapshot = transaction.get(document)
+
+            val validOffer =
+                snapshot.exists() &&
+                        snapshot.getString("entrantId") == entrantId &&
+                        snapshot.getString("type") == LotteryResultNotification.TYPE_WON &&
+                        (snapshot.getString("offerStatus")
+                            ?: LotteryResultNotification.OFFER_PENDING) ==
+                        LotteryResultNotification.OFFER_PENDING
+
+            if (!validOffer) {
+                false
+            } else {
+                transaction.update(
+                    document,
+                    "offerStatus",
+                    LotteryResultNotification.OFFER_DECLINED
+                )
+                true
+            }
+        }.addOnSuccessListener { declined ->
+            onDone(declined)
+        }.addOnFailureListener {
+            println("Declining the reservation offer failed: ${it.message}")
+            onDone(false)
+        }
+    }
+
+    /**
      * Saves a new reservation.
      *
      * @param reservation the reservation to save
@@ -69,6 +122,130 @@ object ReservationRepository {
                 onResult(emptyList())
             }
     }
+
+    /**
+     * Loads the winning offer statuses for one lottery (US 01.04.03).
+     *
+     * The campsite owner uses these statuses to see which winners declined their offers. The lottery's winners are not changed.
+     *
+     * @param lotteryId the selected lottery's Firestore id
+     * @param onResult maps entrant ids to their offer statuses
+     */
+    fun getOfferStatusesForLottery(
+        lotteryId: String,
+        onResult: (Map<String, String>) -> Unit
+    ) {
+        if (lotteryId.isBlank()) {
+            onResult(emptyMap())
+            return
+        }
+
+        FirebaseSecurity.ownerDb.collection("notifications")
+            .whereEqualTo("lotteryId", lotteryId)
+            .get()
+            .addOnSuccessListener { result ->
+                val statuses = mutableMapOf<String, String>()
+
+                for (document in result.documents) {
+                    val entrantId = document.getString("entrantId")
+                    val type = document.getString("type")
+
+                    if (!entrantId.isNullOrBlank() &&
+                        type == LotteryResultNotification.TYPE_WON
+                    ) {
+                        statuses[entrantId] =
+                            document.getString("offerStatus")
+                                ?: LotteryResultNotification.OFFER_PENDING
+                    }
+                }
+
+                onResult(statuses)
+            }
+            .addOnFailureListener {
+                println("Loading lottery offer statuses failed: ${it.message}")
+                onResult(emptyMap())
+            }
+    }
+
+
+    /**
+     * Loads reservations for a campsite so entrants can
+     * see which dates are already booked (US 01.04.01).
+     */
+    fun getForCampsite(
+        campsiteId: String,
+        onResult: (List<Reservation>?) -> Unit
+    ) {
+        if (campsiteId.isBlank()) {
+            onResult(null)
+            return
+        }
+
+        reservations()
+            .whereEqualTo("campsiteId", campsiteId)
+            .get()
+            .addOnSuccessListener { result ->
+                val activeReservations = result.documents
+                    .mapNotNull { document ->
+                        document.data?.let {
+                            Reservation.fromMap(document.id, it)
+                        }
+                    }
+                    .filter { !it.isCancelled() }
+
+                onResult(activeReservations)
+            }
+            .addOnFailureListener { error ->
+                println("Loading booked dates failed: ${error.message}")
+                onResult(null)
+            }
+    }
+
+
+    /**
+     * Listens for reservation changes for one campsite.
+     * US 01.04.01 - Available dates update when others book.
+     *
+     * Returns null if Firestore cannot load availability.
+     *  AI assistance (Deepali Ladhar):
+     *  This function was implemented with the help of OpenAI ChatGPT.
+     *  ChatGPT assisted with the Firestore snapshot listener syntax
+     *  and real-time reservation availability updates (US 01.04.01).
+     *  Deepali reviewed and verified the implementation.
+     *
+     *  OpenAI. (2026). ChatGPT [Large language model].
+     *  https://chatgpt.com/
+     */
+    fun listenForCampsiteReservations(
+        campsiteId: String,
+        onResult: (List<Reservation>?) -> Unit
+    ): com.google.firebase.firestore.ListenerRegistration? {
+        if (campsiteId.isBlank()) {
+            onResult(null)
+            return null
+        }
+
+        return reservations()
+            .whereEqualTo("campsiteId", campsiteId)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null || snapshot == null) {
+                    println("Listening for booked dates failed: ${error?.message}")
+                    onResult(null)
+                } else {
+                    val activeReservations = snapshot.documents
+                        .mapNotNull { document ->
+                            document.data?.let {
+                                Reservation.fromMap(document.id, it)
+                            }
+                        }
+                        .filter { !it.isCancelled() }
+
+                    onResult(activeReservations)
+                }
+            }
+    }
+
+
 
     // ---------- Owner side (US 02.06.01, 02.07.01, 02.07.02, 02.07.03) ----------
     // Added at the end of the file on purpose, so it doesn't clash with
