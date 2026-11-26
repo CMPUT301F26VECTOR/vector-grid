@@ -2,6 +2,7 @@ package com.example.project_halfway
 import com.google.firebase.auth.FirebaseAuthInvalidUserException
 import com.google.firebase.firestore.Source
 import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.messaging.FirebaseMessaging
 
 /**
  * Signs entrants in with their device, with no username or password
@@ -110,31 +111,39 @@ object EntrantAuthManager {
                         onSuccess(user)
                     }
                 } else {
-                    val entrant = EntrantProfile(
-                        Name = "",
-                        EmailAddress = "",
-                        PhoneNumber = "",
-                        ProfilePicture = "",
-                        uid = user.uid
-                    )
-                    val entrantdata = hashMapOf(
-                        "Name" to entrant.Name,
-                        "EmailAddress" to entrant.EmailAddress,
-                        "PhoneNumber" to entrant.PhoneNumber,
-                        "ProfilePicture" to entrant.ProfilePicture,
-                        "uid" to entrant.uid,
-                        "role" to "entrant"
-                    )
-                    document.set(entrantdata)
-                        .addOnSuccessListener {
-                            onSuccess(user)
-                        }
-                        .addOnFailureListener { exception ->
-                            onFailure(
-                                exception.localizedMessage
-                                    ?: "Failed to create entrant profile"
-                            )
-                        }
+                    // Extract FCM token
+                    FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+                        val token = if (task.isSuccessful) task.result else ""
+
+                        val entrant = EntrantProfile(
+                            Name = "",
+                            EmailAddress = "",
+                            PhoneNumber = "",
+                            ProfilePicture = "",
+                            uid = user.uid,
+                            fcmToken = token
+                        )
+                        val entrantdata = hashMapOf(
+                            "Name" to entrant.Name,
+                            "EmailAddress" to entrant.EmailAddress,
+                            "PhoneNumber" to entrant.PhoneNumber,
+                            "ProfilePicture" to entrant.ProfilePicture,
+                            "uid" to entrant.uid,
+                            "role" to "entrant",
+                            "fcmToken" to entrant.fcmToken
+                        )
+                        document.set(entrantdata)
+                            .addOnSuccessListener {
+                                onSuccess(user)
+                            }
+                            .addOnFailureListener { exception ->
+                                onFailure(
+                                    exception.localizedMessage
+                                        ?: "Failed to create entrant profile"
+                                )
+                            }
+                    }
+
                 }
 
             }

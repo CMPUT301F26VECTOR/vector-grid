@@ -2,6 +2,12 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- Permission to use push notifications and internet connection (for notifications) -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <uses-permission android:name="android.permission.INTERNET"/>
+
+
+
     <!-- Parneet: lets the app show phone pop-ups on Android 13+ (US 01.03.01, 01.03.02) -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
@@ -14,6 +20,18 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Project_halfway">
+
+        <!-- For showing messaging and notifications while app is in foreground -->
+        <service
+            android:name=".CampsiteFirebaseMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="waitlist_notifications" />
 
         <!-- Google Maps SDK key. The value comes from MAPS_API_KEY in local.properties. -->
         <meta-data
@@ -37,6 +55,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
 
         <activity android:name=".EntrantHomeScreenClass"
             android:exported="false"/>

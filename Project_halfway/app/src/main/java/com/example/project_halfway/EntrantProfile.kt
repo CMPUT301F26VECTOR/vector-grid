@@ -14,11 +14,14 @@ package com.example.project_halfway
  * @property PhoneNumber the entrant's phone number (optional)
  * @property ProfilePicture link to their profile picture, or "" if none
  * @property uid their Firebase Authentication user id
+ * @property fcmToken The user's FCM token. Corresponds uniquely to a user's device.
+ * For notification services.
  */
 data class EntrantProfile (
     val Name: String,
-    val EmailAddress:String,
+    val EmailAddress: String,
     val PhoneNumber: String,
-    val ProfilePicture:String,
-    val uid:String
+    val ProfilePicture: String,
+    val uid: String,
+    val fcmToken: String
 )
