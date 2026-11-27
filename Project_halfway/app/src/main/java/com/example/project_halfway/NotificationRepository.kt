@@ -102,8 +102,9 @@ object NotificationRepository {
     }
 
     /**
-     * Loads every notification in the app for the admin logs
-     * (US 03.08.01 and US 03.12.01).
+     * Loads every notification in the app for the admin log (US 03.08.01).
+     * This is the app's notifications (lottery results, reservations,
+     * cancellations) and the owner messages together.
      *
      * @param onResult gets all the notifications, newest first
      * @param onError gets an error message if loading failed
@@ -118,10 +119,68 @@ object NotificationRepository {
                         list.add(EntrantNotification.fromMap(doc.id, data))
                     }
                 }
-                onResult(NotificationHelper.newestFirst(list))
+                // then add the owner messages
+                getOwnerMessagesForAdmin(
+                    onResult = { messages ->
+                        list.addAll(messages)
+                        onResult(NotificationHelper.newestFirst(list))
+                    },
+                    onError = {
+                        // still show the app's notifications if the messages didn't load
+                        onResult(NotificationHelper.newestFirst(list))
+                    }
+                )
             }
             .addOnFailureListener {
                 onError("Could not load notifications: " + it.message)
+            }
+    }
+
+    /**
+     * Loads the messages campsite owners sent to entrants (US 03.12.01).
+     * Owners' messages are saved in the "notification_logs" collection
+     * (US 02.10.01), so each one is changed into an EntrantNotification
+     * with type "ownerMessage".
+     *
+     * @param onResult gets the owner messages, newest first
+     * @param onError gets an error message if loading failed
+     */
+    fun getOwnerMessagesForAdmin(onResult: (List<EntrantNotification>) -> Unit, onError: (String) -> Unit) {
+        FirebaseSecurity.adminDB.collection("notification_logs").get()
+            .addOnSuccessListener { result ->
+                val list = mutableListOf<EntrantNotification>()
+                for (doc in result.documents) {
+                    // the time is saved as a Firestore Timestamp, so change it to milliseconds
+                    var sentAt = 0L
+                    val time = doc.getTimestamp("timestamp")
+                    if (time != null) {
+                        sentAt = time.toDate().time
+                    }
+
+                    val title = doc.getString("title") ?: ""
+                    val message = doc.getString("message") ?: ""
+                    var text = message
+                    if (title != "") {
+                        text = title + ": " + message
+                    }
+
+                    list.add(
+                        EntrantNotification(
+                            id = doc.id,
+                            entrantId = "",
+                            campsiteId = "",
+                            type = EntrantNotification.TYPE_OWNER_MESSAGE,
+                            message = text,
+                            sentAt = sentAt,
+                            senderId = doc.getString("senderId") ?: "",
+                            lotteryId = doc.getString("lotteryId") ?: ""
+                        )
+                    )
+                }
+                onResult(NotificationHelper.newestFirst(list))
+            }
+            .addOnFailureListener {
+                onError("Could not load owner messages: " + it.message)
             }
     }
 

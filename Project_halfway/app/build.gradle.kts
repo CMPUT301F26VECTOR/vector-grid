@@ -103,6 +103,8 @@ dependencies {
     implementation("com.google.firebase:firebase-storage")
     implementation("io.coil-kt.coil3:coil-compose:3.6.3")
     implementation("io.coil-kt.coil3:coil-network-okhttp:3.6.3")
+    // Parneet: Google code scanner for scanning campsite QR codes (US 01.12.01)
+    implementation("com.google.android.gms:play-services-code-scanner:16.1.0")
 }
 // Dokka: builds HTML documentation from the KDoc comments in the code.
 // Run  ./gradlew :app:dokkaGenerate  and open app/build/dokka/html/index.html

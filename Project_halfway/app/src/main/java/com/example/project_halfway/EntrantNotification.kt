@@ -18,7 +18,11 @@ import java.util.Locale
  *
  * Anthropic. (2026). *Claude* (Claude Opus 5.5) [Large language model]. https://claude.ai
  *
- * Outstanding issues: owner messages (US 02.10.01) need type "ownerMessage" and the owner's id in "senderId" to show in the admin message log.
+ * Owner messages (US 02.10.01) are saved in a different collection,
+ * "notification_logs". The admin logs turn them into this class too, with
+ * type "ownerMessage" (see NotificationRepository).
+ *
+ * Outstanding issues: none known.
  *
  * @property id the Firestore document id ("" if not saved yet)
  * @property entrantId the entrant who gets the notification
@@ -27,6 +31,7 @@ import java.util.Locale
  * @property message the text that was saved (can be empty)
  * @property sentAt when it was sent, in milliseconds
  * @property senderId the owner who sent it (only for owner messages)
+ * @property lotteryId the lottery it is about ("" if not known)
  */
 data class EntrantNotification(
     val id: String = "",
@@ -35,7 +40,8 @@ data class EntrantNotification(
     val type: String,
     val message: String,
     val sentAt: Long,
-    val senderId: String = ""
+    val senderId: String = "",
+    val lotteryId: String = ""
 ) {
     /** True if a campsite owner sent this message. */
     fun isOwnerMessage(): Boolean {
@@ -198,7 +204,8 @@ data class EntrantNotification(
                 type = m["type"] as? String ?: "",
                 message = m["message"] as? String ?: "",
                 sentAt = sentAt,
-                senderId = m["senderId"] as? String ?: ""
+                senderId = m["senderId"] as? String ?: "",
+                lotteryId = m["lotteryId"] as? String ?: ""
             )
         }
     }

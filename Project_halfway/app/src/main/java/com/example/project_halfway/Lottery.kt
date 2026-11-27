@@ -18,8 +18,12 @@ import kotlin.random.Random
  * Used for US 01.01.06, 01.02.01, 01.02.02 (entrant side) and
  * US 02.04.02, 02.04.03, 02.04.04, 02.04.05, 02.04.07, 02.05.01 (owner side).
  *
- * Outstanding issues: the owner can't change a lottery after it is saved, and
- * winners and non-winners are not told the result of the draw yet.
+ * Outstanding issues: none known. (Entrants are now told the result of the
+ * draw by notification, see EntrantNotification and PhoneNotifier.)
+ *
+ * **AI assistance (Parneet Kaur):** part of this code was written with Claude; Parneet tested it and checked that it works.
+ *
+ * Anthropic. (2026). *Claude* (Claude Opus 5.5) [Large language model]. https://claude.ai
  *
  * @property id the Firestore document id of this lottery
  * @property campsiteId id of the first campsite in this lottery
@@ -34,11 +38,6 @@ import kotlin.random.Random
  * @param winners ids picked by the draw (empty until the draw happens)
  * @param notSelected ids that joined but were not picked (empty until the draw happens)
  * @param isDrawn true if the winners were already drawn
- *
- *
- * **AI assistance (Parneet Kaur):** part of this code was written with Claude; Parneet tested it and checked that it works.
- *
- * Anthropic. (2026). *Claude* (Claude Opus 5.5) [Large language model]. https://claude.ai
  */
 
 class Lottery(
