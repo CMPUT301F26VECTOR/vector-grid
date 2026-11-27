@@ -79,7 +79,11 @@ object ReservationRepository {
     fun save(reservation: Reservation, onDone: (Reservation?) -> Unit) {
         val document = reservations().document()
         document.set(Reservation.toMap(reservation))
-            .addOnSuccessListener { onDone(reservation.copy(id = document.id)) }
+            .addOnSuccessListener {
+                // Parneet: tell the entrant their reservation is confirmed (US 01.05.02)
+                NotificationRepository.send(EntrantNotification.forReservation(reservation, System.currentTimeMillis()))
+                onDone(reservation.copy(id = document.id))
+            }
             .addOnFailureListener {
                 println("Saving the reservation failed: ${it.message}")
                 onDone(null)
