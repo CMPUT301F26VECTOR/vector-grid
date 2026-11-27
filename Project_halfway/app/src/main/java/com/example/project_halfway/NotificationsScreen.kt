@@ -1,6 +1,8 @@
 package com.example.project_halfway
 
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -14,6 +16,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Switch
@@ -35,6 +38,9 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 /**
  * The entrant's Notifications screen. It opens from the "Notifications" card
@@ -42,9 +48,10 @@ import androidx.compose.ui.unit.sp
  *
  * It shows all the entrant's notifications: lottery wins and losses,
  * reservations, cancellations and owner messages. At the top there is a
- * switch to turn notifications off.
+ * switch to turn notifications off, and a button to download the entrant's
+ * reservations as a CSV file.
  *
- * Used for US 01.03.01, US 01.03.02 and US 01.10.01.
+ * Used for US 01.03.01, US 01.03.02, US 01.05.02, US 01.07.02 and US 01.10.01.
  *
  * **AI assistance (Parneet Kaur):** this code was written with Claude; Parneet tested it and checked that it works.
  *
@@ -60,14 +67,39 @@ fun NotificationsScreen(onBackClick: () -> Unit) {
     val uid = FirebaseSecurity.auth.currentUser?.uid ?: ""
 
     val notifications = remember { mutableStateListOf<EntrantNotification>() }
+    val reservations = remember { mutableStateListOf<Reservation>() }
     val campsiteNames = remember { mutableStateMapOf<String, String>() }
     var optedOut by remember { mutableStateOf(false) }
     var loading by remember { mutableStateOf(true) }
 
-    // load the opt-out setting when the screen opens
+    // opens the "save file" window, then writes the CSV to the file the entrant picked
+    val saveCsv = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/csv")) { uri ->
+        if (uri != null) {
+            try {
+                val csv = ReservationCsv.build(reservations.toList(), campsiteNames.toMap())
+                val output = context.contentResolver.openOutputStream(uri)
+                output?.write(csv.toByteArray())
+                output?.close()
+                Toast.makeText(context, "Reservations saved as CSV", Toast.LENGTH_SHORT).show()
+            } catch (e: Exception) {
+                Toast.makeText(context, "Could not save the file", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    // load the opt-out setting and the reservations when the screen opens
     LaunchedEffect(uid) {
         if (uid != "") {
             NotificationRepository.isOptedOut(uid) { optedOut = it }
+            ReservationRepository.getForEntrant(uid) { list ->
+                reservations.clear()
+                reservations.addAll(list)
+                for (r in list) {
+                    CampsiteRepository.getById(r.campsiteId) { campsite ->
+                        campsiteNames[r.campsiteId] = campsite.getCampsiteName()
+                    }
+                }
+            }
         }
     }
 
@@ -123,6 +155,24 @@ fun NotificationsScreen(onBackClick: () -> Unit) {
                     }
                 }
             )
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // download the reservations as a CSV file (US 01.05.02, US 01.07.02)
+            Button(
+                colors = greenButtonColors(),
+                modifier = Modifier.testTag("download_csv"),
+                onClick = {
+                    if (reservations.isEmpty()) {
+                        Toast.makeText(context, "You have no reservations yet", Toast.LENGTH_SHORT).show()
+                    } else {
+                        val today = SimpleDateFormat("yyyy-MM-dd", Locale.CANADA).format(Date())
+                        saveCsv.launch(ReservationCsv.fileName(today))
+                    }
+                }
+            ) {
+                Text("Download my reservations (CSV)")
+            }
         }
 
         Spacer(modifier = Modifier.height(12.dp))

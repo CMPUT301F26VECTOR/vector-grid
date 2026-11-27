@@ -30,7 +30,8 @@ object AdminRepository {
                             EmailAddress = document.getString("EmailAddress") ?: "",
                             PhoneNumber = document.getString("PhoneNumber") ?: "",
                             ProfilePicture = document.getString("ProfilePicture") ?: "",
-                            uid = document.id
+                            uid = document.id,
+                            fcmToken = document.getString("fcmToken") ?: ""
                         )
 
                         entrants.add(entrant)
