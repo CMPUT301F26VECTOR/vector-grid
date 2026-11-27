@@ -39,12 +39,11 @@ import com.google.firebase.messaging.FirebaseMessaging
  * Outstanding issues: the count doesn't update if someone else joins or
  * leaves while the screen is open.
  *
- * @param campsiteId id of the campsite being looked at
- *
- *
  * **AI assistance (Parneet Kaur):** part of this code was written with Claude; Parneet tested it and checked that it works.
  *
  * Anthropic. (2026). *Claude* (Claude Opus 5.5) [Large language model]. https://claude.ai
+ *
+ * @param campsiteId id of the campsite being looked at
  */
 
 @Composable

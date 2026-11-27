@@ -72,6 +72,15 @@
         <activity android:name=".NotificationsActivity"
             android:exported="false"/>
 
+
+        <!-- Parneet: campsite details opened after scanning a QR code (US 01.12.01) -->
+        <activity android:name=".CampsiteDetailsActivity"
+            android:exported="false"/>
+
+        <!-- Parneet: downloads the Google QR code scanner when the app is installed (US 01.12.01) -->
+        <meta-data
+            android:name="com.google.mlkit.vision.DEPENDENCIES"
+            android:value="barcode_ui" />
     </application>
 
 </manifest>

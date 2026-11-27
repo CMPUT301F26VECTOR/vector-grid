@@ -9,6 +9,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.outlined.EventNote
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Notifications
+import androidx.compose.material.icons.outlined.QrCodeScanner
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.foundation.layout.statusBarsPadding
 import android.widget.Toast
@@ -392,6 +393,19 @@ fun EntrantHomeScreenUI(
             title = "Notifications",
             subtitle = "Lottery results, reservations and cancellations",
             onClick = { context.startActivity(Intent(context, NotificationsActivity::class.java)) }
+        )
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // Parneet: card for scanning a campsite's QR code (US 01.12.01)
+        HomeCard(
+            icon = Icons.Outlined.QrCodeScanner,
+            title = "Scan QR Code",
+            subtitle = "Scan a campsite poster to see its details",
+            onClick = {
+                QrScanner.scanAndOpen(context) { error ->
+                    Toast.makeText(context, error, Toast.LENGTH_SHORT).show()
+                }
+            }
         )
         Spacer(modifier = Modifier.height(12.dp))
 

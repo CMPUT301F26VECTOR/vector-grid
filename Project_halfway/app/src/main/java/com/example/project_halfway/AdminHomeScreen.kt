@@ -144,6 +144,36 @@ fun AdminHomeScreen () {
                         fontSize = 16.sp
                     )
                 }
+
+                // Parneet: notification logs (US 03.08.01)
+                Button(
+                    onClick = {
+                        myScreen = "NotificationLogs"
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = AppGreen
+                    )
+                ) {
+                    Text(
+                        text = "Notification Logs",
+                        fontSize = 16.sp
+                    )
+                }
+
+                // Parneet: owner message logs (US 03.12.01)
+                Button(
+                    onClick = {
+                        myScreen = "MessageLogs"
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = AppGreen
+                    )
+                ) {
+                    Text(
+                        text = "Owner Message Logs",
+                        fontSize = 16.sp
+                    )
+                }
             }
         }
 
@@ -180,6 +210,21 @@ fun AdminHomeScreen () {
 
         "Ratings" -> {
             AdminRatingsScreen(
+                toback = { myScreen = "home" }
+            )
+        }
+
+        // Parneet: the two log screens (US 03.08.01, US 03.12.01)
+        "NotificationLogs" -> {
+            NotificationLogsUI(
+                ownerMessagesOnly = false,
+                toback = { myScreen = "home" }
+            )
+        }
+
+        "MessageLogs" -> {
+            NotificationLogsUI(
+                ownerMessagesOnly = true,
                 toback = { myScreen = "home" }
             )
         }
