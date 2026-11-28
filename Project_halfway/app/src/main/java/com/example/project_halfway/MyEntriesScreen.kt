@@ -107,7 +107,7 @@ fun MyEntriesScreen(onBackClick: () -> Unit) {
         when (selectedTab) {
             1 -> WaitlistedTab()
             // TODO: Reservations tab (US 01.06.01, 01.06.02, 01.07.01)
-            0 -> NotDoneYetText("Your reservations will show here")
+            0 -> ActiveReservationsTab()
             // Draw results, and reserving dates for a win (US 02.05.01, 02.04.04)
             else -> LotteryResultsTab()
         }

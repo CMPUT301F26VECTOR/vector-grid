@@ -48,7 +48,8 @@ data class Reservation(
     val status: String = STATUS_ACTIVE,
     val cancelledAt: Long = 0L,
     val guests: Int = 0,
-    val rulesAgreed: Boolean = false
+    val rulesAgreed: Boolean = false,
+    val totalCost: Double = 0.0
 ) {
 
     /**
@@ -114,7 +115,8 @@ data class Reservation(
             "status" to r.status,
             "cancelledAt" to r.cancelledAt,
             "guests" to r.guests,
-            "rulesAgreed" to r.rulesAgreed
+            "rulesAgreed" to r.rulesAgreed,
+            "totalCost" to r.totalCost
         )
 
         /**
@@ -133,7 +135,8 @@ data class Reservation(
             status = m["status"] as? String ?: STATUS_ACTIVE,
             cancelledAt = (m["cancelledAt"] as? Number)?.toLong() ?: 0L,
             guests = (m["guests"] as? Number)?.toInt() ?: 0,
-            rulesAgreed =  m["agreedToRules"] as? Boolean?: false
+            rulesAgreed =  m["agreedToRules"] as? Boolean?: false,
+            totalCost = (m["totalCost"] as? Number)?.toDouble() ?: 0.0
         )
     }
 }
