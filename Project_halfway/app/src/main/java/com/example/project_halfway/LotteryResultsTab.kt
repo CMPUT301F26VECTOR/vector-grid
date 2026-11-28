@@ -42,6 +42,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.AlertDialog
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.KeyboardType
 
 /**
  * The Lottery tab of My Reservations & Entries: the entrant's draw results
@@ -68,6 +71,8 @@ fun LotteryResultsTab() {
     var message by remember { mutableStateOf("") }
     // the win the entrant is reserving dates for, while the calendar is open
     var reserving by remember { mutableStateOf<LotteryResultNotification?>(null) }
+    // Reservation confirmation (US 01.05.01)
+    var confirmedReservation by remember { mutableStateOf<Reservation?>(null) }
     // The winning offer the entrant wants to decline (US 01.04.03).
     var declining by remember { mutableStateOf<LotteryResultNotification?>(null) }
 
@@ -137,10 +142,22 @@ fun LotteryResultsTab() {
             onReserved = { reservation ->
                 reservations[reservation.lotteryId] = reservation
                 reserving = null
-                message = "Your dates are reserved"
+                confirmedReservation = reservation
             }
         )
     }
+    // Show confirmation after successful reservation (US 01.05.01)
+    confirmedReservation?.let { reservation ->
+        ReservationConfirmationDialog(
+            reservation = reservation,
+            campsiteName = campsiteNames[reservation.campsiteId]
+                ?: "Campsite",
+            onDismiss = {
+                confirmedReservation = null
+            }
+        )
+    }
+
     // Confirms that the entrant wants to decline their winning offer (US 01.04.03).
     val offer = declining
 
@@ -449,6 +466,14 @@ private fun BookingPeriodPicker(
         selectableDates = bookable
     )
     var rulesAgreed by remember { mutableStateOf(false) }
+
+    //Guest count for US 01.05.01
+    var guests by remember { mutableStateOf("1") }
+    val guestCount = guests.toIntOrNull() ?: 0
+    val validGuests = campsite?.let {
+        guestCount in 1..it.getOccupancy()
+    } ?: false
+
     val start = state.selectedStartDateMillis
     val end = state.selectedEndDateMillis
 
@@ -465,7 +490,8 @@ private fun BookingPeriodPicker(
             datesAvailable &&
             !availabilityLoading &&
             !availabilityError &&
-            rulesAgreed
+            rulesAgreed &&
+            validGuests
 
     var saving by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf("") }
@@ -478,6 +504,8 @@ private fun BookingPeriodPicker(
                 onClick = {
                     if (start != null && end != null && lottery.isWithinBookingPeriod(start, end)) {
                         saving = true
+                        val nights = ((end - start) / 86_400_000L) + 1
+                        val totalCost = nights * (campsite?.getPricePerNight() ?: 0.0)
                         val reservation = Reservation(
                             entrantId = entrantId,
                             lotteryId = lottery.id,
@@ -485,7 +513,9 @@ private fun BookingPeriodPicker(
                             startDate = CampsiteForm.millisToDate(start),
                             endDate = CampsiteForm.millisToDate(end),
                             createdAt = System.currentTimeMillis(),
-                            rulesAgreed = rulesAgreed
+                            guests = guestCount,
+                            rulesAgreed = rulesAgreed,
+                            totalCost = totalCost
                         )
                         ReservationRepository.save(reservation) { saved ->
                             saving = false
@@ -512,6 +542,24 @@ private fun BookingPeriodPicker(
                 state = state,
                 modifier = Modifier.height(460.dp),
                 showModeToggle = false
+            )
+
+            // Guest input for US 01.05.01
+            OutlinedTextField(
+                value = guests,
+                onValueChange = { guests = it },
+                label = { Text("Number of guests") },
+                supportingText = {
+                    Text("Maximum guests: ${campsite?.getOccupancy() ?: 0}")
+                },
+                isError = !validGuests,
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Number
+                ),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp, vertical = 8.dp)
             )
 
             Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)) {
